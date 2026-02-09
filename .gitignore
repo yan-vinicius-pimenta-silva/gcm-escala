@@ -1,0 +1,24 @@
+# .NET
+bin/
+obj/
+*.db
+*.db-shm
+*.db-wal
+.vs/
+*.user
+*.suo
+
+# Node
+node_modules/
+dist/
+.env
+.env.local
+
+# IDE
+.idea/
+*.swp
+*.swo
+
+# OS
+Thumbs.db
+.DS_Store
