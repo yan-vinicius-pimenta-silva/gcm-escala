@@ -37,6 +37,15 @@ builder.Services.AddAuthorization();
 // Services
 builder.Services.AddScoped(typeof(IRepository<>), typeof(Repository<>));
 builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddScoped<ISetorService, SetorService>();
+builder.Services.AddScoped<IPosicaoService, PosicaoService>();
+builder.Services.AddScoped<ITurnoService, TurnoService>();
+builder.Services.AddScoped<IHorarioService, HorarioService>();
+builder.Services.AddScoped<IGuardaService, GuardaService>();
+builder.Services.AddScoped<IViaturaService, ViaturaService>();
+builder.Services.AddScoped<IEquipeService, EquipeService>();
+builder.Services.AddScoped<IFeriasService, FeriasService>();
+builder.Services.AddScoped<IAusenciaService, AusenciaService>();
 
 // Controllers
 builder.Services.AddControllers()
