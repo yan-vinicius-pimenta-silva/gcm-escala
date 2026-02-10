@@ -36,7 +36,7 @@ export default function GuardaForm({ open, onClose, onSubmit, editData }: Props)
         <DialogTitle>{editData ? 'Editar Guarda' : 'Novo Guarda'}</DialogTitle>
         <DialogContent>
           <FormField name="nome" control={control} label="Nome" />
-          <FormField name="telefone" control={control} label="Telefone" />
+          <FormField name="telefone" control={control} label="Telefone" maxLength={20} />
           <SelectField name="posicaoId" control={control} label="Posição" options={posicaoOptions} />
           <SwitchField name="ativo" control={control} label="Ativo" />
         </DialogContent>

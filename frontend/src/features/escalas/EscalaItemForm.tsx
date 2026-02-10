@@ -144,6 +144,7 @@ export default function EscalaItemForm({ tipoSetor, ano, mes, quinzena, editingI
         <TextField
           label="Observacao" size="small" fullWidth multiline rows={2}
           value={observacao} onChange={(e) => setObservacao(e.target.value)} disabled={disabled}
+          inputProps={{ maxLength: 144 }}
         />
 
         <Box display="flex" gap={1}>

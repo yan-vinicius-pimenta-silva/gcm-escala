@@ -1,3 +1,4 @@
+using System.ComponentModel.DataAnnotations;
 using EscalaGcm.Domain.Enums;
 
 namespace EscalaGcm.Application.DTOs.Escalas;
@@ -8,9 +9,17 @@ public record EscalaAlocacaoDto(int Id, int? GuardaId, string? GuardaNome, int? 
 
 public record CreateEscalaRequest(int Ano, int Mes, int Quinzena, int SetorId);
 
-public record AddEscalaItemRequest(string Data, int TurnoId, int HorarioId, string? Observacao, List<AlocacaoRequest> Alocacoes);
+public record AddEscalaItemRequest(
+    [property: Required, StringLength(10)] string Data,
+    int TurnoId, int HorarioId,
+    [property: StringLength(144)] string? Observacao,
+    List<AlocacaoRequest> Alocacoes);
 public record AlocacaoRequest(int? GuardaId, int? EquipeId, FuncaoAlocacao Funcao, int? ViaturaId);
 
-public record UpdateEscalaItemRequest(string Data, int TurnoId, int HorarioId, string? Observacao, List<AlocacaoRequest> Alocacoes);
+public record UpdateEscalaItemRequest(
+    [property: Required, StringLength(10)] string Data,
+    int TurnoId, int HorarioId,
+    [property: StringLength(144)] string? Observacao,
+    List<AlocacaoRequest> Alocacoes);
 
 public record ConflictError(string Tipo, string Mensagem);

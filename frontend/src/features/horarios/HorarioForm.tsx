@@ -30,9 +30,9 @@ export default function HorarioForm({ open, onClose, onSubmit, editData }: Props
       <form onSubmit={handleSubmit(onSubmit)}>
         <DialogTitle>{editData ? 'Editar Horário' : 'Novo Horário'}</DialogTitle>
         <DialogContent>
-          <FormField name="inicio" control={control} label="Hora Início (HH:mm)" />
-          <FormField name="fim" control={control} label="Hora Fim (HH:mm)" />
-          <FormField name="descricao" control={control} label="Descrição (opcional)" />
+          <FormField name="inicio" control={control} label="Hora Início (HH:mm)" maxLength={5} />
+          <FormField name="fim" control={control} label="Hora Fim (HH:mm)" maxLength={5} />
+          <FormField name="descricao" control={control} label="Descrição (opcional)" maxLength={100} />
           <SwitchField name="ativo" control={control} label="Ativo" />
         </DialogContent>
         <DialogActions>

@@ -34,11 +34,13 @@ export default function LoginPage() {
               fullWidth label="Usuário" value={nomeUsuario}
               onChange={e => setNomeUsuario(e.target.value)}
               margin="normal" required autoFocus
+              inputProps={{ maxLength: 144 }}
             />
             <TextField
               fullWidth label="Senha" type="password" value={senha}
               onChange={e => setSenha(e.target.value)}
               margin="normal" required
+              inputProps={{ maxLength: 144 }}
             />
             <Button type="submit" variant="contained" fullWidth sx={{ mt: 2 }} size="large">
               Entrar

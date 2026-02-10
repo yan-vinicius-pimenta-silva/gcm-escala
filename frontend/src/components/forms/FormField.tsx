@@ -9,10 +9,11 @@ interface FormFieldProps<T extends FieldValues> {
   multiline?: boolean;
   rows?: number;
   disabled?: boolean;
+  maxLength?: number;
 }
 
 export default function FormField<T extends FieldValues>({
-  name, control, label, type = 'text', multiline, rows, disabled,
+  name, control, label, type = 'text', multiline, rows, disabled, maxLength = 144,
 }: FormFieldProps<T>) {
   const shouldShrinkLabel = type === 'date' || type === 'time' || type === 'datetime-local';
 
@@ -32,6 +33,7 @@ export default function FormField<T extends FieldValues>({
           multiline={multiline}
           rows={rows}
           disabled={disabled}
+          inputProps={{ maxLength }}
           InputLabelProps={shouldShrinkLabel ? { shrink: true } : undefined}
         />
       )}
