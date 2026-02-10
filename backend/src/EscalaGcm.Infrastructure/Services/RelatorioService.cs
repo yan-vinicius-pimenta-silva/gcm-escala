@@ -40,104 +40,124 @@ public class RelatorioService : IRelatorioService
 
     private async Task<RelatorioResult> RelatorioSetores()
     {
-        var linhas = await _context.Setores
+        var setores = await _context.Setores
             .OrderBy(s => s.Nome)
-            .Select(s => new Dictionary<string, string>
-            {
-                ["Nome"] = s.Nome,
-                ["Tipo"] = s.Tipo.ToString(),
-                ["Ativo"] = s.Ativo ? "Sim" : "Nao",
-            })
+            .Select(s => new { s.Nome, Tipo = s.Tipo.ToString(), s.Ativo })
             .ToListAsync();
+
+        var linhas = setores.Select(s => new Dictionary<string, string>
+        {
+            ["Nome"] = s.Nome,
+            ["Tipo"] = s.Tipo,
+            ["Ativo"] = s.Ativo ? "Sim" : "Nao",
+        }).ToList();
 
         return BuildCadastroRelatorio("Relatorio de Setores", new List<string> { "Nome", "Tipo", "Ativo" }, linhas);
     }
 
     private async Task<RelatorioResult> RelatorioPosicoes()
     {
-        var linhas = await _context.Posicoes
+        var posicoes = await _context.Posicoes
             .OrderBy(p => p.Nome)
-            .Select(p => new Dictionary<string, string>
-            {
-                ["Nome"] = p.Nome,
-                ["Ativo"] = p.Ativo ? "Sim" : "Nao",
-            })
+            .Select(p => new { p.Nome, p.Ativo })
             .ToListAsync();
+
+        var linhas = posicoes.Select(p => new Dictionary<string, string>
+        {
+            ["Nome"] = p.Nome,
+            ["Ativo"] = p.Ativo ? "Sim" : "Nao",
+        }).ToList();
 
         return BuildCadastroRelatorio("Relatorio de Posicoes", new List<string> { "Nome", "Ativo" }, linhas);
     }
 
     private async Task<RelatorioResult> RelatorioTurnos()
     {
-        var linhas = await _context.Turnos
+        var turnos = await _context.Turnos
             .OrderBy(t => t.Nome)
-            .Select(t => new Dictionary<string, string>
-            {
-                ["Nome"] = t.Nome,
-                ["Ativo"] = t.Ativo ? "Sim" : "Nao",
-            })
+            .Select(t => new { t.Nome, t.Ativo })
             .ToListAsync();
+
+        var linhas = turnos.Select(t => new Dictionary<string, string>
+        {
+            ["Nome"] = t.Nome,
+            ["Ativo"] = t.Ativo ? "Sim" : "Nao",
+        }).ToList();
 
         return BuildCadastroRelatorio("Relatorio de Turnos", new List<string> { "Nome", "Ativo" }, linhas);
     }
 
     private async Task<RelatorioResult> RelatorioHorarios()
     {
-        var linhas = await _context.Horarios
+        var horarios = await _context.Horarios
             .OrderBy(h => h.Inicio)
-            .Select(h => new Dictionary<string, string>
-            {
-                ["Descricao"] = h.Descricao,
-                ["Inicio"] = h.Inicio.ToString(),
-                ["Fim"] = h.Fim.ToString(),
-                ["Ativo"] = h.Ativo ? "Sim" : "Nao",
-            })
+            .Select(h => new { h.Descricao, h.Inicio, h.Fim, h.Ativo })
             .ToListAsync();
+
+        var linhas = horarios.Select(h => new Dictionary<string, string>
+        {
+            ["Descricao"] = h.Descricao,
+            ["Inicio"] = h.Inicio.ToString(),
+            ["Fim"] = h.Fim.ToString(),
+            ["Ativo"] = h.Ativo ? "Sim" : "Nao",
+        }).ToList();
 
         return BuildCadastroRelatorio("Relatorio de Horarios", new List<string> { "Descricao", "Inicio", "Fim", "Ativo" }, linhas);
     }
 
     private async Task<RelatorioResult> RelatorioEquipes()
     {
-        var linhas = await _context.Equipes
+        var equipes = await _context.Equipes
             .OrderBy(e => e.Nome)
-            .Select(e => new Dictionary<string, string>
-            {
-                ["Nome"] = e.Nome,
-                ["Ativo"] = e.Ativo ? "Sim" : "Nao",
-            })
+            .Select(e => new { e.Nome, e.Ativo })
             .ToListAsync();
+
+        var linhas = equipes.Select(e => new Dictionary<string, string>
+        {
+            ["Nome"] = e.Nome,
+            ["Ativo"] = e.Ativo ? "Sim" : "Nao",
+        }).ToList();
 
         return BuildCadastroRelatorio("Relatorio de Equipes", new List<string> { "Nome", "Ativo" }, linhas);
     }
 
     private async Task<RelatorioResult> RelatorioViaturas()
     {
-        var linhas = await _context.Viaturas
+        var viaturas = await _context.Viaturas
             .OrderBy(v => v.Identificador)
-            .Select(v => new Dictionary<string, string>
-            {
-                ["Identificador"] = v.Identificador,
-                ["Ativo"] = v.Ativo ? "Sim" : "Nao",
-            })
+            .Select(v => new { v.Identificador, v.Ativo })
             .ToListAsync();
+
+        var linhas = viaturas.Select(v => new Dictionary<string, string>
+        {
+            ["Identificador"] = v.Identificador,
+            ["Ativo"] = v.Ativo ? "Sim" : "Nao",
+        }).ToList();
 
         return BuildCadastroRelatorio("Relatorio de Viaturas", new List<string> { "Identificador", "Ativo" }, linhas);
     }
 
     private async Task<RelatorioResult> RelatorioGuardas()
     {
-        var linhas = await _context.Guardas
+        var guardas = await _context.Guardas
             .Include(g => g.Posicao)
             .OrderBy(g => g.Nome)
-            .Select(g => new Dictionary<string, string>
+            .Select(g => new
             {
-                ["Nome"] = g.Nome,
-                ["Posicao"] = g.Posicao.Nome,
-                ["Telefone"] = g.Telefone ?? string.Empty,
-                ["Ativo"] = g.Ativo ? "Sim" : "Nao",
+                g.Nome,
+                Posicao = g.Posicao.Nome,
+                g.Telefone,
+                g.Ativo,
             })
             .ToListAsync();
+
+        var linhas = guardas.Select(g => new Dictionary<string, string>
+        {
+            ["Nome"] = g.Nome,
+            ["Posicao"] = g.Posicao,
+            ["Telefone"] = g.Telefone ?? string.Empty,
+            ["Ativo"] = g.Ativo ? "Sim" : "Nao",
+        }).ToList();
 
         return BuildCadastroRelatorio("Relatorio de Guardas", new List<string> { "Nome", "Posicao", "Telefone", "Ativo" }, linhas);
     }
