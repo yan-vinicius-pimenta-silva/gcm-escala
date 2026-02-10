@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { Outlet, useNavigate, useLocation } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { Navigate, useNavigate, useLocation } from 'react-router-dom';
 import {
   AppBar, Box, Drawer, IconButton, List, ListItemButton, ListItemIcon, ListItemText,
   Toolbar, Typography, Divider, Button,
@@ -18,6 +18,18 @@ import EventBusyIcon from '@mui/icons-material/EventBusy';
 import AssessmentIcon from '@mui/icons-material/Assessment';
 import { useAuth } from '../contexts/AuthContext';
 
+import SetoresPage from '../features/setores/SetoresPage';
+import PosicoesPage from '../features/posicoes/PosicoesPage';
+import TurnosPage from '../features/turnos/TurnosPage';
+import HorariosPage from '../features/horarios/HorariosPage';
+import GuardasPage from '../features/guardas/GuardasPage';
+import ViaturasPage from '../features/viaturas/ViaturasPage';
+import EquipesPage from '../features/equipes/EquipesPage';
+import FeriasPage from '../features/ferias/FeriasPage';
+import AusenciasPage from '../features/ausencias/AusenciasPage';
+import EscalasPage from '../features/escalas/EscalasPage';
+import RelatoriosPage from '../features/relatorios/RelatoriosPage';
+
 const DRAWER_WIDTH = 260;
 
 const menuItems = [
@@ -34,11 +46,36 @@ const menuItems = [
   { label: 'Relatórios', path: '/relatorios', icon: <AssessmentIcon /> },
 ];
 
+const pages: { path: string; component: React.ComponentType }[] = [
+  { path: '/setores', component: SetoresPage },
+  { path: '/posicoes', component: PosicoesPage },
+  { path: '/turnos', component: TurnosPage },
+  { path: '/horarios', component: HorariosPage },
+  { path: '/equipes', component: EquipesPage },
+  { path: '/viaturas', component: ViaturasPage },
+  { path: '/guardas', component: GuardasPage },
+  { path: '/escalas', component: EscalasPage },
+  { path: '/ferias', component: FeriasPage },
+  { path: '/ausencias', component: AusenciasPage },
+  { path: '/relatorios', component: RelatoriosPage },
+];
+
 export default function MainLayout() {
   const [drawerOpen, setDrawerOpen] = useState(true);
   const navigate = useNavigate();
   const location = useLocation();
   const { nomeCompleto, logout } = useAuth();
+
+  const [visited, setVisited] = useState<Set<string>>(new Set());
+
+  useEffect(() => {
+    setVisited(prev => {
+      if (prev.has(location.pathname)) return prev;
+      return new Set(prev).add(location.pathname);
+    });
+  }, [location.pathname]);
+
+  if (location.pathname === '/') return <Navigate to="/setores" />;
 
   return (
     <Box sx={{ display: 'flex' }}>
@@ -79,7 +116,13 @@ export default function MainLayout() {
       </Drawer>
       <Box component="main" sx={{ flexGrow: 1, p: 3, ml: drawerOpen ? `${DRAWER_WIDTH}px` : 0, transition: 'margin 0.3s' }}>
         <Toolbar />
-        <Outlet />
+        {pages.map(({ path, component: Component }) => (
+          visited.has(path) && (
+            <div key={path} style={{ display: location.pathname === path ? 'block' : 'none' }}>
+              <Component />
+            </div>
+          )
+        ))}
       </Box>
     </Box>
   );
