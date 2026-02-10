@@ -1,5 +1,6 @@
 import { Box, FormControl, InputLabel, Select, MenuItem, TextField, Autocomplete, Button } from '@mui/material';
 import DownloadIcon from '@mui/icons-material/Download';
+import PictureAsPdfIcon from '@mui/icons-material/PictureAsPdf';
 import { useSetores } from '../setores/useSetores';
 import { useGuardas } from '../guardas/useGuardas';
 import type { TipoRelatorio } from '../../api/relatorios';
@@ -33,14 +34,15 @@ interface Props {
   guardaId: number | null;
   onGuardaIdChange: (id: number | null) => void;
   onGerar: () => void;
-  onExportar: () => void;
+  onExportarExcel: () => void;
+  onExportarPdf: () => void;
   isLoading: boolean;
 }
 
 export default function RelatorioFilters({
   tipo, onTipoChange, mes, onMesChange, ano, onAnoChange,
   setorId, onSetorIdChange, guardaId, onGuardaIdChange,
-  onGerar, onExportar, isLoading,
+  onGerar, onExportarExcel, onExportarPdf, isLoading,
 }: Props) {
   const { data: setores = [] } = useSetores();
   const { data: guardas = [] } = useGuardas();
@@ -91,8 +93,11 @@ export default function RelatorioFilters({
       <Button variant="contained" onClick={onGerar} disabled={isLoading || (showGuarda && !guardaId)}>
         Gerar
       </Button>
-      <Button variant="outlined" startIcon={<DownloadIcon />} onClick={onExportar} disabled={isLoading}>
+      <Button variant="outlined" startIcon={<DownloadIcon />} onClick={onExportarExcel} disabled={isLoading}>
         Exportar Excel
+      </Button>
+      <Button variant="outlined" color="secondary" startIcon={<PictureAsPdfIcon />} onClick={onExportarPdf} disabled={isLoading}>
+        Exportar PDF
       </Button>
     </Box>
   );

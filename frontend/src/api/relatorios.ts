@@ -36,3 +36,16 @@ export const exportarExcel = (data: RelatorioRequest) =>
     link.remove();
     window.URL.revokeObjectURL(url);
   });
+
+
+export const exportarPdf = (data: RelatorioRequest) =>
+  apiClient.post('/relatorios/pdf', data, { responseType: 'blob' }).then(r => {
+    const url = window.URL.createObjectURL(new Blob([r.data], { type: 'application/pdf' }));
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', `relatorio_${data.tipo}_${data.mes}_${data.ano}.pdf`);
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    window.URL.revokeObjectURL(url);
+  });
