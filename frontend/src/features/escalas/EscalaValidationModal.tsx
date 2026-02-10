@@ -3,6 +3,7 @@ import BeachAccessIcon from '@mui/icons-material/BeachAccess';
 import EventBusyIcon from '@mui/icons-material/EventBusy';
 import WarningIcon from '@mui/icons-material/Warning';
 import RuleIcon from '@mui/icons-material/Rule';
+import PeopleIcon from '@mui/icons-material/People';
 import type { ConflictError } from '../../api/escalas';
 
 const iconMap: Record<string, React.ReactNode> = {
@@ -10,6 +11,7 @@ const iconMap: Record<string, React.ReactNode> = {
   AUSENCIA: <EventBusyIcon color="error" />,
   CONFLITO_ESCALA: <WarningIcon color="error" />,
   REGRA_SETOR: <RuleIcon color="info" />,
+  GUARDA_DUPLICADO: <PeopleIcon color="error" />,
 };
 
 interface Props {

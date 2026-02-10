@@ -32,6 +32,21 @@ public class EquipeService : IEquipeService
         if (request.GuardaIds.Count < 2 || request.GuardaIds.Count > 4)
             return (null, "Equipe deve ter entre 2 e 4 membros");
 
+        // Check if any guard already belongs to another active team
+        foreach (var guardaId in request.GuardaIds)
+        {
+            var existingTeam = await _context.EquipeMembros
+                .Include(m => m.Equipe)
+                .Where(m => m.GuardaId == guardaId && m.Equipe.Ativo)
+                .Select(m => m.Equipe.Nome)
+                .FirstOrDefaultAsync();
+            if (existingTeam != null)
+            {
+                var guarda = await _context.Guardas.FindAsync(guardaId);
+                return (null, $"{guarda?.Nome ?? $"Guarda #{guardaId}"} já pertence à equipe '{existingTeam}'");
+            }
+        }
+
         var entity = new Equipe { Nome = request.Nome, Ativo = request.Ativo };
         _context.Equipes.Add(entity);
         await _context.SaveChangesAsync();
@@ -50,6 +65,21 @@ public class EquipeService : IEquipeService
 
         var entity = await _context.Equipes.Include(e => e.Membros).FirstOrDefaultAsync(e => e.Id == id);
         if (entity == null) return (null, "Equipe não encontrada");
+
+        // Check if any guard already belongs to another active team (exclude this team)
+        foreach (var guardaId in request.GuardaIds)
+        {
+            var existingTeam = await _context.EquipeMembros
+                .Include(m => m.Equipe)
+                .Where(m => m.GuardaId == guardaId && m.Equipe.Ativo && m.EquipeId != id)
+                .Select(m => m.Equipe.Nome)
+                .FirstOrDefaultAsync();
+            if (existingTeam != null)
+            {
+                var guarda = await _context.Guardas.FindAsync(guardaId);
+                return (null, $"{guarda?.Nome ?? $"Guarda #{guardaId}"} já pertence à equipe '{existingTeam}'");
+            }
+        }
 
         entity.Nome = request.Nome;
         entity.Ativo = request.Ativo;

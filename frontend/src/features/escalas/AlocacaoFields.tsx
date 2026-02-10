@@ -62,23 +62,38 @@ export default function AlocacaoFields({ tipoSetor, alocacoes, onChange }: Props
   const activeEquipes = equipes.filter((e: Equipe) => e.ativo);
   const activeViaturas = viaturas.filter((v: Viatura) => v.ativo);
 
-  const guardaSingle = (label: string, value: number | null, onSet: (id: number | null) => void) => (
+  // Build sets of guard IDs already used in each role to prevent duplicate selection
+  const motoristaSet = alocacoes.motoristaId ? [alocacoes.motoristaId] : [];
+  const encarregadoSet = alocacoes.encarregadoId ? [alocacoes.encarregadoId] : [];
+  const apoioSet = alocacoes.apoioGuardaIds;
+
+  const guardasForMotorista = activeGuardas.filter(
+    (g) => !encarregadoSet.includes(g.id) && !apoioSet.includes(g.id)
+  );
+  const guardasForEncarregado = activeGuardas.filter(
+    (g) => !motoristaSet.includes(g.id) && !apoioSet.includes(g.id)
+  );
+  const guardasForApoio = activeGuardas.filter(
+    (g) => !motoristaSet.includes(g.id) && !encarregadoSet.includes(g.id)
+  );
+
+  const guardaSingle = (label: string, value: number | null, onSet: (id: number | null) => void, options: Guarda[]) => (
     <Autocomplete
       sx={{ minWidth: 200 }}
-      options={activeGuardas}
+      options={options}
       getOptionLabel={(o: Guarda) => o.nome}
-      value={activeGuardas.find(g => g.id === value) || null}
+      value={options.find(g => g.id === value) || null}
       onChange={(_, v) => onSet(v?.id ?? null)}
       renderInput={(params) => <TextField {...params} label={label} size="small" />}
     />
   );
 
-  const guardaMulti = (label: string, value: number[], onSet: (ids: number[]) => void) => (
+  const guardaMulti = (label: string, value: number[], onSet: (ids: number[]) => void, options: Guarda[]) => (
     <Autocomplete
       multiple sx={{ minWidth: 200 }}
-      options={activeGuardas}
+      options={options}
       getOptionLabel={(o: Guarda) => o.nome}
-      value={activeGuardas.filter(g => value.includes(g.id))}
+      value={options.filter(g => value.includes(g.id))}
       onChange={(_, v) => onSet(v.map(g => g.id))}
       renderInput={(params) => <TextField {...params} label={label} size="small" />}
     />
@@ -89,7 +104,7 @@ export default function AlocacaoFields({ tipoSetor, alocacoes, onChange }: Props
       <Typography variant="subtitle2">Alocacao</Typography>
 
       {tipoSetor === TipoSetor.Padrao && (
-        guardaMulti('Guardas (Integrante)', alocacoes.guardaIds, (ids) => onChange({ ...alocacoes, guardaIds: ids }))
+        guardaMulti('Guardas (Integrante)', alocacoes.guardaIds, (ids) => onChange({ ...alocacoes, guardaIds: ids }), activeGuardas)
       )}
 
       {tipoSetor === TipoSetor.CentralComunicacoes && (
@@ -106,17 +121,17 @@ export default function AlocacaoFields({ tipoSetor, alocacoes, onChange }: Props
       {(tipoSetor === TipoSetor.RadioPatrulha || tipoSetor === TipoSetor.DivisaoRural ||
         tipoSetor === TipoSetor.Romu || tipoSetor === TipoSetor.RondaComercio) && (
         <>
-          {guardaSingle('Motorista', alocacoes.motoristaId, (id) => onChange({ ...alocacoes, motoristaId: id }))}
-          {guardaSingle('Encarregado', alocacoes.encarregadoId, (id) => onChange({ ...alocacoes, encarregadoId: id }))}
+          {guardaSingle('Motorista', alocacoes.motoristaId, (id) => onChange({ ...alocacoes, motoristaId: id }), guardasForMotorista)}
+          {guardaSingle('Encarregado', alocacoes.encarregadoId, (id) => onChange({ ...alocacoes, encarregadoId: id }), guardasForEncarregado)}
         </>
       )}
 
       {tipoSetor === TipoSetor.RadioPatrulha && (
-        guardaMulti('Apoio', alocacoes.apoioGuardaIds, (ids) => onChange({ ...alocacoes, apoioGuardaIds: ids }))
+        guardaMulti('Apoio', alocacoes.apoioGuardaIds, (ids) => onChange({ ...alocacoes, apoioGuardaIds: ids }), guardasForApoio)
       )}
 
       {tipoSetor === TipoSetor.Romu && (
-        guardaMulti('Integrante (opcional)', alocacoes.apoioGuardaIds, (ids) => onChange({ ...alocacoes, apoioGuardaIds: ids }))
+        guardaMulti('Integrante (opcional)', alocacoes.apoioGuardaIds, (ids) => onChange({ ...alocacoes, apoioGuardaIds: ids }), guardasForApoio)
       )}
 
       <Autocomplete
