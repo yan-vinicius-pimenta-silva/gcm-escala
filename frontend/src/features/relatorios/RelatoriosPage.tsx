@@ -1,4 +1,79 @@
-import { Typography } from '@mui/material';
+import { useState } from 'react';
+import { Box, Typography } from '@mui/material';
+import { DataGrid, type GridColDef } from '@mui/x-data-grid';
+import { useSnackbar } from 'notistack';
+import PageHeader from '../../components/ui/PageHeader';
+import RelatorioFilters from './RelatorioFilters';
+import { useGerarRelatorio, useExportarExcel } from './useRelatorios';
+import type { TipoRelatorio, RelatorioResult } from '../../api/relatorios';
+
 export default function RelatoriosPage() {
-  return <Typography variant="h4">Relatórios - Em construção</Typography>;
+  const { enqueueSnackbar } = useSnackbar();
+  const [tipo, setTipo] = useState<TipoRelatorio>('EscalaMensalPorSetor');
+  const [mes, setMes] = useState(new Date().getMonth() + 1);
+  const [ano, setAno] = useState(new Date().getFullYear());
+  const [setorId, setSetorId] = useState<number | null>(null);
+  const [guardaId, setGuardaId] = useState<number | null>(null);
+  const [resultado, setResultado] = useState<RelatorioResult | null>(null);
+
+  const gerarMut = useGerarRelatorio();
+  const exportarMut = useExportarExcel();
+
+  const buildRequest = () => ({
+    tipo, mes, ano,
+    ...(setorId ? { setorId } : {}),
+    ...(guardaId ? { guardaId } : {}),
+  });
+
+  async function handleGerar() {
+    try {
+      const result = await gerarMut.mutateAsync(buildRequest());
+      setResultado(result);
+    } catch (err: any) {
+      enqueueSnackbar(err.response?.data?.message || 'Erro ao gerar relatorio', { variant: 'error' });
+    }
+  }
+
+  async function handleExportar() {
+    try {
+      await exportarMut.mutateAsync(buildRequest());
+      enqueueSnackbar('Excel exportado com sucesso', { variant: 'success' });
+    } catch (err: any) {
+      enqueueSnackbar('Erro ao exportar', { variant: 'error' });
+    }
+  }
+
+  const columns: GridColDef[] = resultado
+    ? resultado.colunas.map(col => ({ field: col, headerName: col, flex: 1, minWidth: 120 }))
+    : [];
+
+  const rows = resultado
+    ? resultado.linhas.map((row, i) => ({ id: i, ...row }))
+    : [];
+
+  return (
+    <Box>
+      <PageHeader title="Relatorios" />
+      <RelatorioFilters
+        tipo={tipo} onTipoChange={setTipo}
+        mes={mes} onMesChange={setMes}
+        ano={ano} onAnoChange={setAno}
+        setorId={setorId} onSetorIdChange={setSetorId}
+        guardaId={guardaId} onGuardaIdChange={setGuardaId}
+        onGerar={handleGerar}
+        onExportar={handleExportar}
+        isLoading={gerarMut.isPending || exportarMut.isPending}
+      />
+      {resultado && (
+        <>
+          <Typography variant="h6" mt={3} mb={2}>{resultado.tituloRelatorio}</Typography>
+          <DataGrid
+            rows={rows} columns={columns} autoHeight
+            pageSizeOptions={[10, 25, 50]}
+            initialState={{ pagination: { paginationModel: { pageSize: 25 } } }}
+          />
+        </>
+      )}
+    </Box>
+  );
 }

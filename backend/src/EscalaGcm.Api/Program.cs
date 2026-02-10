@@ -46,6 +46,10 @@ builder.Services.AddScoped<IViaturaService, ViaturaService>();
 builder.Services.AddScoped<IEquipeService, EquipeService>();
 builder.Services.AddScoped<IFeriasService, FeriasService>();
 builder.Services.AddScoped<IAusenciaService, AusenciaService>();
+builder.Services.AddScoped<IConflictValidationService, ConflictValidationService>();
+builder.Services.AddScoped<ISectorRuleService, SectorRuleService>();
+builder.Services.AddScoped<IEscalaService, EscalaService>();
+builder.Services.AddScoped<IRelatorioService, RelatorioService>();
 
 // Controllers
 builder.Services.AddControllers()

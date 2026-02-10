@@ -117,6 +117,7 @@ export interface Escala {
   mes: number;
   quinzena: number;
   setorId: number;
+  setorNome?: string;
   status: StatusEscala;
   setor?: Setor;
   itens?: EscalaItem[];
@@ -127,7 +128,9 @@ export interface EscalaItem {
   escalaId: number;
   data: string;
   turnoId: number;
+  turnoNome?: string;
   horarioId: number;
+  horarioDescricao?: string;
   observacao?: string;
   turno?: Turno;
   horario?: Horario;
@@ -138,9 +141,12 @@ export interface EscalaAlocacao {
   id: number;
   escalaItemId: number;
   guardaId?: number;
+  guardaNome?: string;
   equipeId?: number;
+  equipeNome?: string;
   funcao: FuncaoAlocacao;
   viaturaId?: number;
+  viaturaIdentificador?: string;
   guarda?: Guarda;
   equipe?: Equipe;
   viatura?: Viatura;
