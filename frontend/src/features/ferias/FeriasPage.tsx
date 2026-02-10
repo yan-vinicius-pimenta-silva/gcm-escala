@@ -10,6 +10,7 @@ import FeriasForm from './FeriasForm';
 import { useFeriasList, useCreateFerias, useUpdateFerias, useDeleteFerias } from './useFerias';
 import type { Ferias } from '../../types';
 import type { FeriasFormData } from './feriasSchema';
+import { formatDateToDisplay } from '../../utils/date';
 
 export default function FeriasPage() {
   const { data: items = [], isLoading } = useFeriasList();
@@ -39,8 +40,8 @@ export default function FeriasPage() {
   const columns: GridColDef[] = [
     { field: 'id', headerName: 'ID', width: 70 },
     { field: 'guardaNome', headerName: 'Guarda', flex: 1 },
-    { field: 'dataInicio', headerName: 'Início', width: 130 },
-    { field: 'dataFim', headerName: 'Fim', width: 130 },
+    { field: 'dataInicio', headerName: 'Início', width: 130, valueFormatter: (value) => formatDateToDisplay(value) },
+    { field: 'dataFim', headerName: 'Fim', width: 130, valueFormatter: (value) => formatDateToDisplay(value) },
     { field: 'observacao', headerName: 'Observação', flex: 1 },
     { field: 'actions', headerName: 'Ações', width: 120, sortable: false, renderCell: (p) => (<><IconButton size="small" onClick={() => { setEditItem(p.row); setFormOpen(true); }}><EditIcon /></IconButton><IconButton size="small" onClick={() => setDeleteId(p.row.id)}><DeleteIcon /></IconButton></>) },
   ];

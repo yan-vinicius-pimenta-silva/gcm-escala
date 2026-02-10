@@ -3,6 +3,7 @@ import { IconButton } from '@mui/material';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import type { EscalaItem, EscalaAlocacao } from '../../types';
+import { formatDateToDisplay } from '../../utils/date';
 
 function formatAlocados(alocacoes?: EscalaAlocacao[]): string {
   if (!alocacoes?.length) return '';
@@ -55,7 +56,7 @@ export default function EscalaGrid({ items, onEdit, onDelete, isReadOnly }: Prop
     }));
 
   const columns: GridColDef[] = [
-    { field: 'data', headerName: 'Data', width: 120 },
+    { field: 'data', headerName: 'Data', width: 120, valueFormatter: (value) => formatDateToDisplay(value) },
     { field: 'turnoNome', headerName: 'Turno', width: 120 },
     { field: 'horarioDescricao', headerName: 'Horario', width: 150 },
     { field: 'alocados', headerName: 'Alocados', flex: 1, minWidth: 200 },
