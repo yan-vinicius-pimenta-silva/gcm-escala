@@ -40,7 +40,7 @@ public class EscalaService : IEscalaService
             .Include(e => e.Itens).ThenInclude(i => i.Turno)
             .Include(e => e.Itens).ThenInclude(i => i.Horario)
             .Include(e => e.Itens).ThenInclude(i => i.Alocacoes).ThenInclude(a => a.Guarda)
-            .Include(e => e.Itens).ThenInclude(i => i.Alocacoes).ThenInclude(a => a.Equipe)
+            .Include(e => e.Itens).ThenInclude(i => i.Alocacoes).ThenInclude(a => a.Equipe).ThenInclude(eq => eq!.Membros).ThenInclude(m => m.Guarda)
             .Include(e => e.Itens).ThenInclude(i => i.Alocacoes).ThenInclude(a => a.Viatura)
             .FirstOrDefaultAsync(e => e.Id == id);
 
@@ -100,7 +100,7 @@ public class EscalaService : IEscalaService
         var loaded = await _context.EscalaItens
             .Include(i => i.Turno).Include(i => i.Horario)
             .Include(i => i.Alocacoes).ThenInclude(a => a.Guarda)
-            .Include(i => i.Alocacoes).ThenInclude(a => a.Equipe)
+            .Include(i => i.Alocacoes).ThenInclude(a => a.Equipe).ThenInclude(eq => eq!.Membros).ThenInclude(m => m.Guarda)
             .Include(i => i.Alocacoes).ThenInclude(a => a.Viatura)
             .FirstAsync(i => i.Id == item.Id);
 
@@ -144,7 +144,7 @@ public class EscalaService : IEscalaService
         var loaded = await _context.EscalaItens
             .Include(i => i.Turno).Include(i => i.Horario)
             .Include(i => i.Alocacoes).ThenInclude(a => a.Guarda)
-            .Include(i => i.Alocacoes).ThenInclude(a => a.Equipe)
+            .Include(i => i.Alocacoes).ThenInclude(a => a.Equipe).ThenInclude(eq => eq!.Membros).ThenInclude(m => m.Guarda)
             .Include(i => i.Alocacoes).ThenInclude(a => a.Viatura)
             .FirstAsync(i => i.Id == item.Id);
 
@@ -215,6 +215,21 @@ public class EscalaService : IEscalaService
         i.Id, i.EscalaId, i.Data.ToString("yyyy-MM-dd"),
         i.TurnoId, i.Turno.Nome, i.HorarioId, i.Horario.Descricao, i.Observacao,
         i.Alocacoes.Select(a => new EscalaAlocacaoDto(
-            a.Id, a.GuardaId, a.Guarda?.Nome, a.EquipeId, a.Equipe?.Nome,
+            a.Id, a.GuardaId, a.Guarda?.Nome, a.EquipeId, FormatEquipeNomeComIntegrantes(a.Equipe),
             a.Funcao, a.ViaturaId, a.Viatura?.Identificador)).ToList());
+
+    private static string? FormatEquipeNomeComIntegrantes(Equipe? equipe)
+    {
+        if (equipe == null) return null;
+
+        var integrantes = equipe.Membros
+            .Select(m => m.Guarda?.Nome)
+            .Where(nome => !string.IsNullOrWhiteSpace(nome))
+            .Cast<string>()
+            .ToList();
+
+        if (!integrantes.Any()) return equipe.Nome;
+
+        return $"{equipe.Nome} [{string.Join(", ", integrantes)}]";
+    }
 }

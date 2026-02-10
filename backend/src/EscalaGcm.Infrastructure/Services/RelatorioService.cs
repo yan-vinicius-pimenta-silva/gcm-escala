@@ -31,13 +31,13 @@ public class RelatorioService : IRelatorioService
             .Include(e => e.Itens).ThenInclude(i => i.Turno)
             .Include(e => e.Itens).ThenInclude(i => i.Horario)
             .Include(e => e.Itens).ThenInclude(i => i.Alocacoes).ThenInclude(a => a.Guarda)
-            .Include(e => e.Itens).ThenInclude(i => i.Alocacoes).ThenInclude(a => a.Equipe)
+            .Include(e => e.Itens).ThenInclude(i => i.Alocacoes).ThenInclude(a => a.Equipe).ThenInclude(eq => eq!.Membros).ThenInclude(m => m.Guarda)
             .Where(e => e.Ano == req.Ano && e.Mes == req.Mes);
 
         if (req.SetorId.HasValue) query = query.Where(e => e.SetorId == req.SetorId.Value);
 
         var escalas = await query.ToListAsync();
-        var colunas = new List<string> { "Setor", "Quinzena", "Data", "Turno", "Horario", "Alocados", "Status" };
+        var colunas = new List<string> { "Setor", "Quinzena", "Data", "Turno", "Horario", "Alocados", "Integrantes Equipe", "Status" };
         var linhas = new List<Dictionary<string, string>>();
 
         foreach (var escala in escalas)
@@ -46,6 +46,12 @@ public class RelatorioService : IRelatorioService
             {
                 var alocados = string.Join(", ", item.Alocacoes.Select(a =>
                     a.Guarda != null ? $"{a.Guarda.Nome} ({a.Funcao})" : a.Equipe?.Nome ?? ""));
+                var integrantesEquipe = string.Join(" | ", item.Alocacoes
+                    .Where(a => a.Equipe != null)
+                    .Select(a => FormatEquipeIntegrantes(a.Equipe!))
+                    .Where(v => !string.IsNullOrWhiteSpace(v))
+                    .Distinct());
+
                 linhas.Add(new Dictionary<string, string>
                 {
                     ["Setor"] = escala.Setor?.Nome ?? "",
@@ -54,12 +60,24 @@ public class RelatorioService : IRelatorioService
                     ["Turno"] = item.Turno?.Nome ?? "",
                     ["Horario"] = item.Horario != null ? $"{item.Horario.Inicio} - {item.Horario.Fim}" : "",
                     ["Alocados"] = alocados,
+                    ["Integrantes Equipe"] = integrantesEquipe,
                     ["Status"] = escala.Status.ToString(),
                 });
             }
         }
 
         return new RelatorioResult($"Escala Mensal por Setor - {req.Mes:D2}/{req.Ano}", colunas, linhas);
+    }
+
+    private static string FormatEquipeIntegrantes(Domain.Entities.Equipe equipe)
+    {
+        var integrantes = equipe.Membros
+            .Select(m => m.Guarda?.Nome)
+            .Where(nome => !string.IsNullOrWhiteSpace(nome))
+            .Cast<string>()
+            .ToList();
+
+        return integrantes.Count == 0 ? string.Empty : $"{equipe.Nome}: {string.Join(", ", integrantes)}";
     }
 
     private async Task<RelatorioResult> GuardasEscalados(RelatorioRequest req)

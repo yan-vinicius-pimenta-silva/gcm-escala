@@ -14,6 +14,8 @@ interface FormFieldProps<T extends FieldValues> {
 export default function FormField<T extends FieldValues>({
   name, control, label, type = 'text', multiline, rows, disabled,
 }: FormFieldProps<T>) {
+  const shouldShrinkLabel = type === 'date' || type === 'time' || type === 'datetime-local';
+
   return (
     <Controller
       name={name}
@@ -30,6 +32,7 @@ export default function FormField<T extends FieldValues>({
           multiline={multiline}
           rows={rows}
           disabled={disabled}
+          InputLabelProps={shouldShrinkLabel ? { shrink: true } : undefined}
         />
       )}
     />

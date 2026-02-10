@@ -13,6 +13,19 @@ function formatAlocados(alocacoes?: EscalaAlocacao[]): string {
   }).filter(Boolean).join(', ');
 }
 
+function formatIntegrantesEquipe(alocacoes?: EscalaAlocacao[]): string {
+  if (!alocacoes?.length) return "";
+
+  return alocacoes
+    .map(a => {
+      if (!a.equipeNome || !a.equipeNome.includes("[")) return "";
+      const [nomeEquipe, integrantes] = a.equipeNome.split("[");
+      return `${nomeEquipe.trim()}: ${integrantes.replace("]", "").trim()}`;
+    })
+    .filter(Boolean)
+    .join(" | " );
+}
+
 function formatViatura(alocacoes?: EscalaAlocacao[]): string {
   if (!alocacoes?.length) return '';
   const v = alocacoes.find(a => a.viaturaIdentificador);
@@ -36,6 +49,7 @@ export default function EscalaGrid({ items, onEdit, onDelete, isReadOnly }: Prop
       horarioDescricao: item.horarioDescricao || '',
       alocados: formatAlocados(item.alocacoes),
       viatura: formatViatura(item.alocacoes),
+      integrantesEquipe: formatIntegrantesEquipe(item.alocacoes),
       observacao: item.observacao || '',
       _raw: item,
     }));
@@ -46,6 +60,7 @@ export default function EscalaGrid({ items, onEdit, onDelete, isReadOnly }: Prop
     { field: 'horarioDescricao', headerName: 'Horario', width: 150 },
     { field: 'alocados', headerName: 'Alocados', flex: 1, minWidth: 200 },
     { field: 'viatura', headerName: 'Viatura', width: 120 },
+    { field: 'integrantesEquipe', headerName: 'Integrantes da Equipe', flex: 1, minWidth: 230 },
     { field: 'observacao', headerName: 'Obs.', width: 150 },
   ];
 

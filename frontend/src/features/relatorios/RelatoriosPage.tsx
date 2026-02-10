@@ -4,7 +4,7 @@ import { DataGrid, type GridColDef } from '@mui/x-data-grid';
 import { useSnackbar } from 'notistack';
 import PageHeader from '../../components/ui/PageHeader';
 import RelatorioFilters from './RelatorioFilters';
-import { useGerarRelatorio, useExportarExcel } from './useRelatorios';
+import { useGerarRelatorio, useExportarExcel, useExportarPdf } from './useRelatorios';
 import type { TipoRelatorio, RelatorioResult } from '../../api/relatorios';
 
 export default function RelatoriosPage() {
@@ -17,7 +17,8 @@ export default function RelatoriosPage() {
   const [resultado, setResultado] = useState<RelatorioResult | null>(null);
 
   const gerarMut = useGerarRelatorio();
-  const exportarMut = useExportarExcel();
+  const exportarExcelMut = useExportarExcel();
+  const exportarPdfMut = useExportarPdf();
 
   const buildRequest = () => ({
     tipo, mes, ano,
@@ -29,17 +30,27 @@ export default function RelatoriosPage() {
     try {
       const result = await gerarMut.mutateAsync(buildRequest());
       setResultado(result);
-    } catch (err: any) {
-      enqueueSnackbar(err.response?.data?.message || 'Erro ao gerar relatorio', { variant: 'error' });
+    } catch (err: unknown) {
+      const message = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
+      enqueueSnackbar(message || 'Erro ao gerar relatorio', { variant: 'error' });
     }
   }
 
-  async function handleExportar() {
+  async function handleExportarExcel() {
     try {
-      await exportarMut.mutateAsync(buildRequest());
+      await exportarExcelMut.mutateAsync(buildRequest());
       enqueueSnackbar('Excel exportado com sucesso', { variant: 'success' });
-    } catch (err: any) {
-      enqueueSnackbar('Erro ao exportar', { variant: 'error' });
+    } catch {
+      enqueueSnackbar('Erro ao exportar Excel', { variant: 'error' });
+    }
+  }
+
+  async function handleExportarPdf() {
+    try {
+      await exportarPdfMut.mutateAsync(buildRequest());
+      enqueueSnackbar('PDF exportado com sucesso', { variant: 'success' });
+    } catch {
+      enqueueSnackbar('Erro ao exportar PDF', { variant: 'error' });
     }
   }
 
@@ -61,8 +72,9 @@ export default function RelatoriosPage() {
         setorId={setorId} onSetorIdChange={setSetorId}
         guardaId={guardaId} onGuardaIdChange={setGuardaId}
         onGerar={handleGerar}
-        onExportar={handleExportar}
-        isLoading={gerarMut.isPending || exportarMut.isPending}
+        onExportarExcel={handleExportarExcel}
+        onExportarPdf={handleExportarPdf}
+        isLoading={gerarMut.isPending || exportarExcelMut.isPending || exportarPdfMut.isPending}
       />
       {resultado && (
         <>

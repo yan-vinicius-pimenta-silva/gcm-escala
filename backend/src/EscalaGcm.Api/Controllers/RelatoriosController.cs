@@ -21,6 +21,16 @@ public class RelatoriosController : ControllerBase
         return Ok(result);
     }
 
+
+    [HttpPost("pdf")]
+    public async Task<IActionResult> GerarPdf([FromBody] RelatorioRequest request)
+    {
+        var result = await _service.GerarRelatorioAsync(request);
+        var bytes = PdfReportGenerator.Generate(result);
+        return File(bytes, "application/pdf",
+            $"relatorio_{request.Tipo}_{request.Mes:D2}_{request.Ano}.pdf");
+    }
+
     [HttpPost("excel")]
     public async Task<IActionResult> GerarExcel([FromBody] RelatorioRequest request)
     {
