@@ -2,6 +2,14 @@ import apiClient from './client';
 
 export type TipoRelatorio =
   | 'EscalaMensalPorSetor'
+  | 'Setores'
+  | 'Posicoes'
+  | 'Turnos'
+  | 'Horarios'
+  | 'Equipes'
+  | 'Viaturas'
+  | 'Guardas'
+  | 'Escalas'
   | 'GuardasEscalados'
   | 'GuardasNaoEscalados'
   | 'Ferias'
@@ -14,6 +22,8 @@ export interface RelatorioRequest {
   ano: number;
   setorId?: number;
   guardaId?: number;
+  mesFim?: number;
+  anoFim?: number;
 }
 
 export interface RelatorioResult {

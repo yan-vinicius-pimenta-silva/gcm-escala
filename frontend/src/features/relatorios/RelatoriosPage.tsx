@@ -12,6 +12,8 @@ export default function RelatoriosPage() {
   const [tipo, setTipo] = useState<TipoRelatorio>('EscalaMensalPorSetor');
   const [mes, setMes] = useState(new Date().getMonth() + 1);
   const [ano, setAno] = useState(new Date().getFullYear());
+  const [mesFim, setMesFim] = useState(new Date().getMonth() + 1);
+  const [anoFim, setAnoFim] = useState(new Date().getFullYear());
   const [setorId, setSetorId] = useState<number | null>(null);
   const [guardaId, setGuardaId] = useState<number | null>(null);
   const [resultado, setResultado] = useState<RelatorioResult | null>(null);
@@ -21,7 +23,10 @@ export default function RelatoriosPage() {
   const exportarPdfMut = useExportarPdf();
 
   const buildRequest = () => ({
-    tipo, mes, ano,
+    tipo,
+    mes,
+    ano,
+    ...(tipo === 'Escalas' ? { mesFim, anoFim } : {}),
     ...(setorId ? { setorId } : {}),
     ...(guardaId ? { guardaId } : {}),
   });
@@ -69,6 +74,8 @@ export default function RelatoriosPage() {
         tipo={tipo} onTipoChange={setTipo}
         mes={mes} onMesChange={setMes}
         ano={ano} onAnoChange={setAno}
+        mesFim={mesFim} onMesFimChange={setMesFim}
+        anoFim={anoFim} onAnoFimChange={setAnoFim}
         setorId={setorId} onSetorIdChange={setSetorId}
         guardaId={guardaId} onGuardaIdChange={setGuardaId}
         onGerar={handleGerar}
@@ -79,11 +86,15 @@ export default function RelatoriosPage() {
       {resultado && (
         <>
           <Typography variant="h6" mt={3} mb={2}>{resultado.tituloRelatorio}</Typography>
-          <DataGrid
-            rows={rows} columns={columns} autoHeight
-            pageSizeOptions={[10, 25, 50]}
-            initialState={{ pagination: { paginationModel: { pageSize: 25 } } }}
-          />
+          {rows.length === 0 ? (
+            <Typography color="text.secondary">Não há registros</Typography>
+          ) : (
+            <DataGrid
+              rows={rows} columns={columns} autoHeight
+              pageSizeOptions={[10, 25, 50]}
+              initialState={{ pagination: { paginationModel: { pageSize: 25 } } }}
+            />
+          )}
         </>
       )}
     </Box>

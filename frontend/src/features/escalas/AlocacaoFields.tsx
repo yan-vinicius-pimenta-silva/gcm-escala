@@ -30,25 +30,25 @@ export function buildAlocacoes(tipoSetor: TipoSetor, state: AlocacaoState): Aloc
   const alocacoes: AlocacaoRequest[] = [];
   switch (tipoSetor) {
     case TipoSetor.Padrao:
-      state.guardaIds.forEach(gid => alocacoes.push({ guardaId: gid, funcao: 'Integrante' }));
+      state.guardaIds.forEach(gid => alocacoes.push({ guardaId: gid, funcao: 'Integrante', viaturaId: state.viaturaId ?? undefined }));
       break;
     case TipoSetor.CentralComunicacoes:
-      if (state.equipeId) alocacoes.push({ equipeId: state.equipeId, funcao: 'Integrante' });
+      if (state.equipeId) alocacoes.push({ equipeId: state.equipeId, funcao: 'Integrante', viaturaId: state.viaturaId ?? undefined });
       break;
     case TipoSetor.RadioPatrulha:
       if (state.motoristaId) alocacoes.push({ guardaId: state.motoristaId, funcao: 'Motorista', viaturaId: state.viaturaId ?? undefined });
-      if (state.encarregadoId) alocacoes.push({ guardaId: state.encarregadoId, funcao: 'Encarregado' });
-      state.apoioGuardaIds.forEach(gid => alocacoes.push({ guardaId: gid, funcao: 'Apoio' }));
+      if (state.encarregadoId) alocacoes.push({ guardaId: state.encarregadoId, funcao: 'Encarregado', viaturaId: state.viaturaId ?? undefined });
+      state.apoioGuardaIds.forEach(gid => alocacoes.push({ guardaId: gid, funcao: 'Apoio', viaturaId: state.viaturaId ?? undefined }));
       break;
     case TipoSetor.DivisaoRural:
     case TipoSetor.RondaComercio:
-      if (state.motoristaId) alocacoes.push({ guardaId: state.motoristaId, funcao: 'Motorista' });
-      if (state.encarregadoId) alocacoes.push({ guardaId: state.encarregadoId, funcao: 'Encarregado' });
+      if (state.motoristaId) alocacoes.push({ guardaId: state.motoristaId, funcao: 'Motorista', viaturaId: state.viaturaId ?? undefined });
+      if (state.encarregadoId) alocacoes.push({ guardaId: state.encarregadoId, funcao: 'Encarregado', viaturaId: state.viaturaId ?? undefined });
       break;
     case TipoSetor.Romu:
-      if (state.motoristaId) alocacoes.push({ guardaId: state.motoristaId, funcao: 'Motorista' });
-      if (state.encarregadoId) alocacoes.push({ guardaId: state.encarregadoId, funcao: 'Encarregado' });
-      state.apoioGuardaIds.forEach(gid => alocacoes.push({ guardaId: gid, funcao: 'Integrante' }));
+      if (state.motoristaId) alocacoes.push({ guardaId: state.motoristaId, funcao: 'Motorista', viaturaId: state.viaturaId ?? undefined });
+      if (state.encarregadoId) alocacoes.push({ guardaId: state.encarregadoId, funcao: 'Encarregado', viaturaId: state.viaturaId ?? undefined });
+      state.apoioGuardaIds.forEach(gid => alocacoes.push({ guardaId: gid, funcao: 'Integrante', viaturaId: state.viaturaId ?? undefined }));
       break;
   }
   return alocacoes;
@@ -112,22 +112,21 @@ export default function AlocacaoFields({ tipoSetor, alocacoes, onChange }: Props
       )}
 
       {tipoSetor === TipoSetor.RadioPatrulha && (
-        <>
-          {guardaMulti('Apoio', alocacoes.apoioGuardaIds, (ids) => onChange({ ...alocacoes, apoioGuardaIds: ids }))}
-          <Autocomplete
-            sx={{ minWidth: 200 }}
-            options={activeViaturas}
-            getOptionLabel={(o: Viatura) => o.identificador}
-            value={activeViaturas.find(v => v.id === alocacoes.viaturaId) || null}
-            onChange={(_, v) => onChange({ ...alocacoes, viaturaId: v?.id ?? null })}
-            renderInput={(params) => <TextField {...params} label="Viatura (opcional)" size="small" />}
-          />
-        </>
+        guardaMulti('Apoio', alocacoes.apoioGuardaIds, (ids) => onChange({ ...alocacoes, apoioGuardaIds: ids }))
       )}
 
       {tipoSetor === TipoSetor.Romu && (
         guardaMulti('Integrante (opcional)', alocacoes.apoioGuardaIds, (ids) => onChange({ ...alocacoes, apoioGuardaIds: ids }))
       )}
+
+      <Autocomplete
+        sx={{ minWidth: 200 }}
+        options={activeViaturas}
+        getOptionLabel={(o: Viatura) => o.identificador}
+        value={activeViaturas.find(v => v.id === alocacoes.viaturaId) || null}
+        onChange={(_, v) => onChange({ ...alocacoes, viaturaId: v?.id ?? null })}
+        renderInput={(params) => <TextField {...params} label="Viatura (opcional)" size="small" />}
+      />
     </Box>
   );
 }
