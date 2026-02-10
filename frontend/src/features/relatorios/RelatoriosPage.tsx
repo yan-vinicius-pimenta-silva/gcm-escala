@@ -6,6 +6,7 @@ import PageHeader from '../../components/ui/PageHeader';
 import RelatorioFilters from './RelatorioFilters';
 import { useGerarRelatorio, useExportarExcel, useExportarPdf } from './useRelatorios';
 import type { TipoRelatorio, RelatorioResult } from '../../api/relatorios';
+import { formatDateToDisplay, isIsoDateString } from '../../utils/date';
 
 export default function RelatoriosPage() {
   const { enqueueSnackbar } = useSnackbar();
@@ -60,7 +61,13 @@ export default function RelatoriosPage() {
   }
 
   const columns: GridColDef[] = resultado
-    ? resultado.colunas.map(col => ({ field: col, headerName: col, flex: 1, minWidth: 120 }))
+    ? resultado.colunas.map(col => ({
+        field: col,
+        headerName: col,
+        flex: 1,
+        minWidth: 120,
+        valueFormatter: (value) => (isIsoDateString(value) ? formatDateToDisplay(value) : value),
+      }))
     : [];
 
   const rows = resultado

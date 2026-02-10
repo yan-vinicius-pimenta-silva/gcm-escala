@@ -10,6 +10,7 @@ import AusenciaForm from './AusenciaForm';
 import { useAusencias, useCreateAusencia, useUpdateAusencia, useDeleteAusencia } from './useAusencias';
 import type { Ausencia } from '../../types';
 import type { AusenciaFormData } from './ausenciaSchema';
+import { formatDateToDisplay } from '../../utils/date';
 
 export default function AusenciasPage() {
   const { data: items = [], isLoading } = useAusencias();
@@ -39,8 +40,8 @@ export default function AusenciasPage() {
   const columns: GridColDef[] = [
     { field: 'id', headerName: 'ID', width: 70 },
     { field: 'guardaNome', headerName: 'Guarda', flex: 1 },
-    { field: 'dataInicio', headerName: 'Início', width: 130 },
-    { field: 'dataFim', headerName: 'Fim', width: 130 },
+    { field: 'dataInicio', headerName: 'Início', width: 130, valueFormatter: (value) => formatDateToDisplay(value) },
+    { field: 'dataFim', headerName: 'Fim', width: 130, valueFormatter: (value) => formatDateToDisplay(value) },
     { field: 'motivo', headerName: 'Motivo', width: 180 },
     { field: 'observacoes', headerName: 'Observações', flex: 1 },
     { field: 'actions', headerName: 'Ações', width: 120, sortable: false, renderCell: (p) => (<><IconButton size="small" onClick={() => { setEditItem(p.row); setFormOpen(true); }}><EditIcon /></IconButton><IconButton size="small" onClick={() => setDeleteId(p.row.id)}><DeleteIcon /></IconButton></>) },
