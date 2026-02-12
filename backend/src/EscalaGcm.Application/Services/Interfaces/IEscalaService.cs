@@ -11,6 +11,5 @@ public interface IEscalaService
     Task<(EscalaItemDto? Result, List<ConflictError>? Errors)> UpdateItemAsync(int escalaId, int itemId, UpdateEscalaItemRequest request);
     Task<(bool Success, string? Error)> DeleteItemAsync(int escalaId, int itemId);
     Task<(bool Success, string? Error)> PublicarAsync(int id);
-    Task<(bool Success, string? Error)> FecharAsync(int id);
     Task<(bool Success, string? Error)> DeleteAsync(int id);
 }

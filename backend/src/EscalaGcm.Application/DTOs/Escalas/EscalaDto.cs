@@ -10,16 +10,16 @@ public record EscalaAlocacaoDto(int Id, int? GuardaId, string? GuardaNome, int? 
 public record CreateEscalaRequest(int Ano, int Mes, int Quinzena, int SetorId);
 
 public record AddEscalaItemRequest(
-    [property: Required, StringLength(10)] string Data,
+    [Required, StringLength(10)] string Data,
     int TurnoId, int HorarioId,
-    [property: StringLength(144)] string? Observacao,
+    [StringLength(144)] string? Observacao,
     List<AlocacaoRequest> Alocacoes);
 public record AlocacaoRequest(int? GuardaId, int? EquipeId, FuncaoAlocacao Funcao, int? ViaturaId);
 
 public record UpdateEscalaItemRequest(
-    [property: Required, StringLength(10)] string Data,
+    [Required, StringLength(10)] string Data,
     int TurnoId, int HorarioId,
-    [property: StringLength(144)] string? Observacao,
+    [StringLength(144)] string? Observacao,
     List<AlocacaoRequest> Alocacoes);
 
 public record ConflictError(string Tipo, string Mensagem);

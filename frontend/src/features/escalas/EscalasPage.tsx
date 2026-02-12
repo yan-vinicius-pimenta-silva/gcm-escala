@@ -7,7 +7,7 @@ import EscalaFilters from './EscalaFilters';
 import EscalaItemForm from './EscalaItemForm';
 import EscalaGrid from './EscalaGrid';
 import EscalaValidationModal from './EscalaValidationModal';
-import { useEscalas, useEscala, useCreateEscala, useAddEscalaItem, useUpdateEscalaItem, useDeleteEscalaItem, usePublicarEscala, useFecharEscala } from './useEscalas';
+import { useEscalas, useEscala, useCreateEscala, useAddEscalaItem, useUpdateEscalaItem, useDeleteEscalaItem, usePublicarEscala } from './useEscalas';
 import { useSetores } from '../setores/useSetores';
 import type { StatusEscala, EscalaItem, TipoSetor } from '../../types';
 import type { ConflictError, AddEscalaItemRequest } from '../../api/escalas';
@@ -31,7 +31,6 @@ export default function EscalasPage() {
   const updateItemMut = useUpdateEscalaItem();
   const deleteItemMut = useDeleteEscalaItem();
   const publicarMut = usePublicarEscala();
-  const fecharMut = useFecharEscala();
 
   const setor = setores.find(s => s.id === setorId);
   const tipoSetor = setor?.tipo as TipoSetor | undefined;
@@ -102,16 +101,6 @@ export default function EscalasPage() {
     }
   }
 
-  async function handleFechar() {
-    if (!escalaId) return;
-    try {
-      await fecharMut.mutateAsync(escalaId);
-      enqueueSnackbar('Escala fechada', { variant: 'success' });
-    } catch (err: any) {
-      enqueueSnackbar(err.response?.data?.message || 'Erro ao fechar', { variant: 'error' });
-    }
-  }
-
   return (
     <Box>
       <PageHeader title="Escalas" />
@@ -122,7 +111,6 @@ export default function EscalasPage() {
         quinzena={quinzena} onQuinzenaChange={(q) => { setQuinzena(q); setEscalaId(null); }}
         onCarregar={handleCarregar}
         onPublicar={handlePublicar}
-        onFechar={handleFechar}
         status={status}
         isLoading={escalasQuery.isFetching || createMut.isPending || detailLoading}
       />

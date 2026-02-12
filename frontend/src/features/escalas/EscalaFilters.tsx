@@ -7,10 +7,9 @@ const MESES = [
   'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro',
 ];
 
-const statusColor: Record<string, 'default' | 'primary' | 'success'> = {
+const statusColor: Record<string, 'default' | 'primary'> = {
   Rascunho: 'default',
   Publicada: 'primary',
-  Fechada: 'success',
 };
 
 interface Props {
@@ -24,14 +23,13 @@ interface Props {
   onQuinzenaChange: (q: number) => void;
   onCarregar: () => void;
   onPublicar: () => void;
-  onFechar: () => void;
   status: StatusEscala | null;
   isLoading: boolean;
 }
 
 export default function EscalaFilters({
   setorId, onSetorChange, mes, onMesChange, ano, onAnoChange,
-  quinzena, onQuinzenaChange, onCarregar, onPublicar, onFechar,
+  quinzena, onQuinzenaChange, onCarregar, onPublicar,
   status, isLoading,
 }: Props) {
   const { data: setores = [] } = useSetores();
@@ -67,9 +65,6 @@ export default function EscalaFilters({
       </Button>
       {status === 'Rascunho' && (
         <Button variant="outlined" color="success" onClick={onPublicar}>Publicar</Button>
-      )}
-      {status === 'Publicada' && (
-        <Button variant="outlined" color="warning" onClick={onFechar}>Fechar</Button>
       )}
       {status && <Chip label={status} color={statusColor[status] || 'default'} />}
     </Box>

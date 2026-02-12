@@ -4,8 +4,8 @@ namespace EscalaGcm.Application.DTOs.Posicoes;
 
 public record PosicaoDto(int Id, string Nome, bool Ativo);
 public record CreatePosicaoRequest(
-    [property: Required, StringLength(144)] string Nome,
+    [Required, StringLength(144)] string Nome,
     bool Ativo = true);
 public record UpdatePosicaoRequest(
-    [property: Required, StringLength(144)] string Nome,
+    [Required, StringLength(144)] string Nome,
     bool Ativo);

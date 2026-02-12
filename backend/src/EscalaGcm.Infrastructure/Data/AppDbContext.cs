@@ -22,6 +22,8 @@ public class AppDbContext : DbContext
     public DbSet<Escala> Escalas => Set<Escala>();
     public DbSet<EscalaItem> EscalaItens => Set<EscalaItem>();
     public DbSet<EscalaAlocacao> EscalaAlocacoes => Set<EscalaAlocacao>();
+    public DbSet<Evento> Eventos => Set<Evento>();
+    public DbSet<Ret> Rets => Set<Ret>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

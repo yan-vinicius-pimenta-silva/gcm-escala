@@ -15,5 +15,4 @@ export const addEscalaItem = (escalaId: number, data: AddEscalaItemRequest) => a
 export const updateEscalaItem = (escalaId: number, itemId: number, data: UpdateEscalaItemRequest) => apiClient.put(`/escalas/${escalaId}/itens/${itemId}`, data).then(r => r.data);
 export const deleteEscalaItem = (escalaId: number, itemId: number) => apiClient.delete(`/escalas/${escalaId}/itens/${itemId}`);
 export const publicarEscala = (id: number) => apiClient.post(`/escalas/${id}/publicar`).then(r => r.data);
-export const fecharEscala = (id: number) => apiClient.post(`/escalas/${id}/fechar`).then(r => r.data);
 export const deleteEscala = (id: number) => apiClient.delete(`/escalas/${id}`);

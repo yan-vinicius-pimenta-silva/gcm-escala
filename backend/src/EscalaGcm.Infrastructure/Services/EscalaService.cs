@@ -176,21 +176,10 @@ public class EscalaService : IEscalaService
         return (true, null);
     }
 
-    public async Task<(bool Success, string? Error)> FecharAsync(int id)
-    {
-        var escala = await _context.Escalas.FindAsync(id);
-        if (escala == null) return (false, "Escala não encontrada");
-        if (escala.Status != StatusEscala.Publicada) return (false, "Somente escalas publicadas podem ser fechadas");
-        escala.Status = StatusEscala.Fechada;
-        await _context.SaveChangesAsync();
-        return (true, null);
-    }
-
     public async Task<(bool Success, string? Error)> DeleteAsync(int id)
     {
         var escala = await _context.Escalas.Include(e => e.Itens).ThenInclude(i => i.Alocacoes).FirstOrDefaultAsync(e => e.Id == id);
         if (escala == null) return (false, "Escala não encontrada");
-        if (escala.Status == StatusEscala.Fechada) return (false, "Não é possível excluir escala fechada");
 
         foreach (var item in escala.Itens)
             _context.EscalaAlocacoes.RemoveRange(item.Alocacoes);

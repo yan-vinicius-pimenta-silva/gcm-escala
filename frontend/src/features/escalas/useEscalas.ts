@@ -2,7 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   getEscalas, getEscala, createEscala, addEscalaItem,
   updateEscalaItem, deleteEscalaItem, publicarEscala,
-  fecharEscala, deleteEscala,
+  deleteEscala,
 } from '../../api/escalas';
 import type { EscalaFiltersParams, CreateEscalaRequest, AddEscalaItemRequest, UpdateEscalaItemRequest } from '../../api/escalas';
 
@@ -47,14 +47,6 @@ export function usePublicarEscala() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (id: number) => publicarEscala(id),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ['escalas'] }); qc.invalidateQueries({ queryKey: ['escala'] }); },
-  });
-}
-
-export function useFecharEscala() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: (id: number) => fecharEscala(id),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ['escalas'] }); qc.invalidateQueries({ queryKey: ['escala'] }); },
   });
 }

@@ -50,6 +50,8 @@ builder.Services.AddScoped<IConflictValidationService, ConflictValidationService
 builder.Services.AddScoped<ISectorRuleService, SectorRuleService>();
 builder.Services.AddScoped<IEscalaService, EscalaService>();
 builder.Services.AddScoped<IRelatorioService, RelatorioService>();
+builder.Services.AddScoped<IEventoService, EventoService>();
+builder.Services.AddScoped<IRetService, RetService>();
 
 // Controllers
 builder.Services.AddControllers()

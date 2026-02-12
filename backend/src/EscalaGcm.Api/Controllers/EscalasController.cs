@@ -64,14 +64,6 @@ public class EscalasController : ControllerBase
         return Ok(new { message = "Escala publicada com sucesso" });
     }
 
-    [HttpPost("{id}/fechar")]
-    public async Task<IActionResult> Fechar(int id)
-    {
-        var (s, e) = await _service.FecharAsync(id);
-        if (!s) return BadRequest(new { message = e });
-        return Ok(new { message = "Escala fechada com sucesso" });
-    }
-
     [HttpDelete("{id}")]
     public async Task<IActionResult> Delete(int id)
     {

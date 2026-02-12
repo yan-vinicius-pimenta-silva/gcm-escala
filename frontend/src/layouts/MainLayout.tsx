@@ -16,6 +16,8 @@ import CalendarMonthIcon from '@mui/icons-material/CalendarMonth';
 import BeachAccessIcon from '@mui/icons-material/BeachAccess';
 import EventBusyIcon from '@mui/icons-material/EventBusy';
 import AssessmentIcon from '@mui/icons-material/Assessment';
+import EventIcon from '@mui/icons-material/Event';
+import WorkHistoryIcon from '@mui/icons-material/WorkHistory';
 import { useAuth } from '../contexts/AuthContext';
 
 import SetoresPage from '../features/setores/SetoresPage';
@@ -29,6 +31,8 @@ import FeriasPage from '../features/ferias/FeriasPage';
 import AusenciasPage from '../features/ausencias/AusenciasPage';
 import EscalasPage from '../features/escalas/EscalasPage';
 import RelatoriosPage from '../features/relatorios/RelatoriosPage';
+import EventosPage from '../features/eventos/EventosPage';
+import RetsPage from '../features/rets/RetsPage';
 
 const DRAWER_WIDTH = 260;
 
@@ -43,6 +47,8 @@ const menuItems = [
   { label: 'Escalas', path: '/escalas', icon: <CalendarMonthIcon /> },
   { label: 'Férias', path: '/ferias', icon: <BeachAccessIcon /> },
   { label: 'Ausências', path: '/ausencias', icon: <EventBusyIcon /> },
+  { label: 'Eventos', path: '/eventos', icon: <EventIcon /> },
+  { label: 'RETs', path: '/rets', icon: <WorkHistoryIcon /> },
   { label: 'Relatórios', path: '/relatorios', icon: <AssessmentIcon /> },
 ];
 
@@ -57,6 +63,8 @@ const pages: { path: string; component: React.ComponentType }[] = [
   { path: '/escalas', component: EscalasPage },
   { path: '/ferias', component: FeriasPage },
   { path: '/ausencias', component: AusenciasPage },
+  { path: '/eventos', component: EventosPage },
+  { path: '/rets', component: RetsPage },
   { path: '/relatorios', component: RelatoriosPage },
 ];
 

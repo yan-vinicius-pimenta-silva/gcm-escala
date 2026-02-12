@@ -14,4 +14,5 @@ public class Guarda : AuditableEntity
     public ICollection<Ferias> Ferias { get; set; } = [];
     public ICollection<Ausencia> Ausencias { get; set; } = [];
     public ICollection<EscalaAlocacao> Alocacoes { get; set; } = [];
+    public ICollection<Ret> Rets { get; set; } = [];
 }

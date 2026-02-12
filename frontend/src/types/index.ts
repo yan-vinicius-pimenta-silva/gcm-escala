@@ -26,7 +26,11 @@ export enum FuncaoAlocacao {
 export enum StatusEscala {
   Rascunho = 'Rascunho',
   Publicada = 'Publicada',
-  Fechada = 'Fechada',
+}
+
+export enum TipoRet {
+  Mensal = 'Mensal',
+  Evento = 'Evento',
 }
 
 export enum PerfilUsuario {
@@ -150,6 +154,26 @@ export interface EscalaAlocacao {
   guarda?: Guarda;
   equipe?: Equipe;
   viatura?: Viatura;
+}
+
+export interface Evento {
+  id: number;
+  nome: string;
+  dataInicio: string;
+  dataFim: string;
+}
+
+export interface Ret {
+  id: number;
+  guardaId: number;
+  guardaNome: string;
+  data: string;
+  horarioInicio: string;
+  horarioFim: string;
+  tipo: TipoRet;
+  eventoId?: number;
+  eventoNome?: string;
+  observacao?: string;
 }
 
 export interface LoginRequest {
