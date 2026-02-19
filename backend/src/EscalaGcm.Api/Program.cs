@@ -17,6 +17,8 @@ builder.Services.AddDbContext<AppDbContext>(options =>
         ?? "Data Source=escala_gcm.db"));
 
 // Auth
+// REVIEW: Hardcoded fallback JWT secret. If config is missing in production, this weak key silently applies.
+// Consider throwing if Jwt:Key is absent in non-Development environments.
 var jwtKey = builder.Configuration["Jwt:Key"] ?? "EscalaGcmSuperSecretKeyForDevelopment2024!";
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
@@ -65,6 +67,7 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 // CORS
+// REVIEW: CORS origin is hardcoded to localhost:5173. Use appsettings to configure per environment.
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowFrontend", policy =>
@@ -78,6 +81,7 @@ builder.Services.AddCors(options =>
 var app = builder.Build();
 
 // Auto-migrate and seed
+// REVIEW: Auto-migrate on every startup is risky in production. Migrations should be a deliberate deployment step.
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();

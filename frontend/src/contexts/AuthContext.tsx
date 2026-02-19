@@ -14,6 +14,8 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | null>(null);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
+  // REVIEW: Three separate useState calls cause 3 re-renders on login. Combine into a single
+  // state object. Also, `perfil` is typed as string -- use a union type ('Admin' | 'Operador' | 'Consulta').
   const [token, setToken] = useState<string | null>(() => localStorage.getItem('token'));
   const [nomeCompleto, setNomeCompleto] = useState<string | null>(() => localStorage.getItem('nomeCompleto'));
   const [perfil, setPerfil] = useState<string | null>(() => localStorage.getItem('perfil'));

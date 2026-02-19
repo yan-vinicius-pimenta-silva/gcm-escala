@@ -36,6 +36,8 @@ public class AuthService : IAuthService
 
     private string GenerateJwtToken(int userId, string username, string perfil)
     {
+        // REVIEW: Same fallback key duplicated from Program.cs. If one changes, token validation breaks silently.
+        // Extract to a shared constant or inject the already-resolved key.
         var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(
             _configuration["Jwt:Key"] ?? "EscalaGcmSuperSecretKeyForDevelopment2024!"));
         var credentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
@@ -51,6 +53,7 @@ public class AuthService : IAuthService
             issuer: _configuration["Jwt:Issuer"] ?? "EscalaGcm",
             audience: _configuration["Jwt:Audience"] ?? "EscalaGcm",
             claims: claims,
+            // REVIEW: Token lifetime hardcoded to 8h. Make configurable via appsettings.
             expires: DateTime.UtcNow.AddHours(8),
             signingCredentials: credentials);
 

@@ -15,6 +15,9 @@ public class ConflictValidationService : IConflictValidationService
         var errors = new List<ConflictError>();
 
         // 1. Collect every guard involved in this request (direct + team members)
+        // REVIEW: N+1 query problem. Each allocation triggers individual DB calls (FindAsync per guard,
+        // query per team). Then step 3 re-queries the same teams again. Batch-load all guards and
+        // team members upfront in a single query to reduce round-trips.
         var guardaEntries = new List<(int GuardaId, string Nome)>();
 
         foreach (var aloc in alocacoes)

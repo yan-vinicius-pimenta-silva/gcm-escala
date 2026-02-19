@@ -6,6 +6,8 @@ using Microsoft.EntityFrameworkCore;
 
 namespace EscalaGcm.Infrastructure.Repositories;
 
+// REVIEW: Each repository exposes SaveChangesAsync, so any service can flush the entire DbContext.
+// This breaks unit-of-work boundaries. Consider a separate IUnitOfWork interface.
 public class Repository<T> : IRepository<T> where T : AuditableEntity
 {
     protected readonly AppDbContext _context;

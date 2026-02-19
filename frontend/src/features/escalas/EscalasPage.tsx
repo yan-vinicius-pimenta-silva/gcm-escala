@@ -33,6 +33,7 @@ export default function EscalasPage() {
   const publicarMut = usePublicarEscala();
 
   const setor = setores.find(s => s.id === setorId);
+  // REVIEW: Unsafe cast. The string from the API may not match the TipoSetor enum. Use a type guard.
   const tipoSetor = setor?.tipo as TipoSetor | undefined;
   const status = escalaDetail?.status as StatusEscala | null ?? null;
   const isReadOnly = status !== null && status !== 'Rascunho';
@@ -51,6 +52,7 @@ export default function EscalasPage() {
         setEscalaId(created.id);
         enqueueSnackbar('Nova escala criada', { variant: 'success' });
       }
+    // REVIEW: `err: any` used throughout all handlers. Define a typed AxiosError shape to avoid `any`.
     } catch (err: any) {
       enqueueSnackbar(err.response?.data?.message || 'Erro ao carregar escala', { variant: 'error' });
     }

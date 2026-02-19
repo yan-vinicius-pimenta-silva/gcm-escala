@@ -35,6 +35,8 @@ public class AppDbContext : DbContext
     {
         foreach (var entry in ChangeTracker.Entries<AuditableEntity>())
         {
+            // REVIEW: CreatedBy/UpdatedBy are defined in AuditableEntity but never populated.
+            // Inject IHttpContextAccessor and set them from JWT claims, or remove the fields.
             if (entry.State == EntityState.Added)
             {
                 entry.Entity.CreatedAt = DateTime.UtcNow;

@@ -16,6 +16,7 @@ public enum TipoRelatorio
     Ferias,
     Ausencias,
     IndividualGuarda,
+    Ret,
 }
 
 public record RelatorioRequest(

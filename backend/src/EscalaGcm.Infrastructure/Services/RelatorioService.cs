@@ -28,6 +28,7 @@ public class RelatorioService : IRelatorioService
             TipoRelatorio.Ferias => await RelatorioFerias(request),
             TipoRelatorio.Ausencias => await RelatorioAusencias(request),
             TipoRelatorio.IndividualGuarda => await IndividualGuarda(request),
+            TipoRelatorio.Ret => await RelatorioRet(request),
             _ => throw new ArgumentException("Tipo de relatório inválido"),
         };
     }
@@ -446,6 +447,44 @@ public class RelatorioService : IRelatorioService
         return new RelatorioResult(
             $"Individual - {guardaNome} - {req.Mes:D2}/{req.Ano}",
             new List<string> { "Data", "Setor", "Turno", "Horario", "Funcao" },
+            linhas);
+    }
+
+    private async Task<RelatorioResult> RelatorioRet(RelatorioRequest req)
+    {
+        var firstDay = new DateOnly(req.Ano, req.Mes, 1);
+        var lastDay = firstDay.AddMonths(1).AddDays(-1);
+
+        var query = _context.Rets
+            .Include(r => r.Guarda)
+            .Include(r => r.Evento)
+            .Where(r => r.Data >= firstDay && r.Data <= lastDay);
+
+        if (req.GuardaId.HasValue)
+            query = query.Where(r => r.GuardaId == req.GuardaId.Value);
+
+        var rets = await query
+            .OrderBy(r => r.Data).ThenBy(r => r.HorarioInicio)
+            .ToListAsync();
+
+        var linhas = rets.Select(r => new Dictionary<string, string>
+        {
+            ["Guarda"] = r.Guarda?.Nome ?? "",
+            ["Data"] = r.Data.ToString("dd/MM/yyyy"),
+            ["Inicio"] = r.HorarioInicio.ToString("HH:mm"),
+            ["Fim"] = r.HorarioFim.ToString("HH:mm"),
+            ["Tipo"] = r.TipoRet.ToString(),
+            ["Evento"] = r.Evento?.Nome ?? "",
+            ["Observacao"] = r.Observacao ?? "",
+        }).ToList();
+
+        var titulo = req.GuardaId.HasValue && rets.Count > 0
+            ? $"RETs - {rets[0].Guarda?.Nome} - {req.Mes:D2}/{req.Ano}"
+            : $"RETs - {req.Mes:D2}/{req.Ano}";
+
+        return new RelatorioResult(
+            titulo,
+            new List<string> { "Guarda", "Data", "Inicio", "Fim", "Tipo", "Evento", "Observacao" },
             linhas);
     }
 }

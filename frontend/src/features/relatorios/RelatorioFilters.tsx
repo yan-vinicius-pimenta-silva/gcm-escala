@@ -21,6 +21,7 @@ const REPORT_OPTIONS: { value: TipoRelatorio; label: string }[] = [
   { value: 'Ferias', label: 'Férias' },
   { value: 'Ausencias', label: 'Ausências' },
   { value: 'IndividualGuarda', label: 'Individual do Guarda' },
+  { value: 'Ret', label: 'RETs (Regime Especial de Trabalho)' },
 ];
 
 const MESES = [
@@ -63,7 +64,9 @@ export default function RelatorioFilters({
   const activeGuardas = guardas.filter((g: Guarda) => g.ativo);
 
   const showSetor = SETOR_REPORTS.includes(tipo);
-  const showGuarda = tipo === 'IndividualGuarda';
+  const showGuardaObrigatorio = tipo === 'IndividualGuarda';
+  const showGuardaOpcional = tipo === 'Ret';
+  const showGuarda = showGuardaObrigatorio || showGuardaOpcional;
   const showPeriodoFim = tipo === 'Escalas';
 
   return (
@@ -112,11 +115,17 @@ export default function RelatorioFilters({
           getOptionLabel={(o: Guarda) => o.nome}
           value={activeGuardas.find(g => g.id === guardaId) || null}
           onChange={(_, v) => onGuardaIdChange(v?.id ?? null)}
-          renderInput={(params) => <TextField {...params} label="Guarda" size="small" />}
+          renderInput={(params) => (
+            <TextField
+              {...params}
+              label={showGuardaOpcional ? 'Guarda (opcional)' : 'Guarda'}
+              size="small"
+            />
+          )}
         />
       )}
 
-      <Button variant="contained" onClick={onGerar} disabled={isLoading || (showGuarda && !guardaId)}>
+      <Button variant="contained" onClick={onGerar} disabled={isLoading || (showGuardaObrigatorio && !guardaId)}>
         Gerar
       </Button>
       <Button variant="outlined" startIcon={<DownloadIcon />} onClick={onExportarExcel} disabled={isLoading}>

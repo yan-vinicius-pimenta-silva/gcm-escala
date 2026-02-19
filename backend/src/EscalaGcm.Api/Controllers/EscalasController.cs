@@ -7,6 +7,8 @@ namespace EscalaGcm.Api.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
+// REVIEW: [Authorize] without role checks. A "Consulta" user can create/delete escalas.
+// Add [Authorize(Roles = "Admin,Operador")] on mutation endpoints.
 [Authorize]
 public class EscalasController : ControllerBase
 {
@@ -48,6 +50,7 @@ public class EscalasController : ControllerBase
         return Ok(result);
     }
 
+    // REVIEW: (s, e) variable names are cryptic. Use (success, error) for readability.
     [HttpDelete("{id}/itens/{itemId}")]
     public async Task<IActionResult> DeleteItem(int id, int itemId)
     {

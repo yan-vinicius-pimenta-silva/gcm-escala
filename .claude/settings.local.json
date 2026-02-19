@@ -21,7 +21,9 @@
       "Bash(curl:*)",
       "Bash(taskkill:*)",
       "Bash(tasklist:*)",
-      "Bash(findstr:*)"
+      "Bash(findstr:*)",
+      "Bash(dir:*)",
+      "Bash(dotnet test:*)"
     ]
   }
 }

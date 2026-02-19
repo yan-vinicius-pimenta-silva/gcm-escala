@@ -98,7 +98,11 @@ public class RetService : IRetService
 
     private async Task<string?> ValidateAsync(int guardaId, DateOnly data, TimeOnly horarioInicio, TimeOnly horarioFim, TipoRet tipo, int? eventoId, int? excludeId)
     {
-        // 1. RET Evento precisa de evento válido no período
+        // 1. RET Evento precisa de evento vinculado que ocorra no mesmo mês do RET
+        // Spec: "RET EVENTO e não há evento no mês? → BLOQUEAR"
+        // O RET de Evento não precisa ser dentro do período do evento — apenas o evento
+        // deve ocorrer (ou sobrepor) o mesmo mês do RET.
+        // Evidência: CENÁRIO VÁLIDO 3 — RET EVENTO em 19/02 com Carnaval 14-17/02 → VÁLIDO ✅
         if (tipo == TipoRet.Evento)
         {
             if (!eventoId.HasValue)
@@ -108,8 +112,12 @@ public class RetService : IRetService
             if (evento == null)
                 return "Evento não encontrado";
 
-            if (data < evento.DataInicio || data > evento.DataFim)
-                return "A data do RET deve estar dentro do período do evento";
+            // Verifica sobreposição entre o período do evento e o mês do RET
+            var retMesInicio = new DateOnly(data.Year, data.Month, 1);
+            var retMesFim = retMesInicio.AddMonths(1).AddDays(-1);
+
+            if (evento.DataFim < retMesInicio || evento.DataInicio > retMesFim)
+                return "O evento selecionado não ocorre no mês do RET";
         }
 
         // 2. Máx 1 RET Mensal por mês
@@ -134,63 +142,69 @@ public class RetService : IRetService
                 return "O guarda já possui 1 RET de Evento neste mês";
         }
 
-        // 4. Sem 2 RETs na mesma semana (domingo a sábado)
-        var dayOfWeek = (int)data.DayOfWeek; // Sunday = 0
-        var weekStart = data.AddDays(-dayOfWeek);
-        var weekEnd = weekStart.AddDays(6);
-        var countWeek = await _context.Rets.CountAsync(r =>
-            r.GuardaId == guardaId
-            && r.Data >= weekStart && r.Data <= weekEnd
-            && (excludeId == null || r.Id != excludeId));
-        if (countWeek >= 1)
-            return "O guarda já possui um RET nesta semana (domingo a sábado)";
-
-        // 5. Descanso 12h antes - verificar última escala do guarda antes do RET
+        // 4. Descanso 12h antes - verificar última escala do guarda antes do RET
+        // RET pode cruzar meia-noite (ex: 22:00-06:00), então o fim real pode ser no dia seguinte
         var retInicio = data.ToDateTime(horarioInicio);
-        var retFim = data.ToDateTime(horarioFim);
+        var retFim = horarioFim < horarioInicio
+            ? data.AddDays(1).ToDateTime(horarioFim)   // RET noturno: fim no dia seguinte
+            : data.ToDateTime(horarioFim);
 
-        // Buscar alocações do guarda em escalas, com horários
-        var escalaBefore = await _context.EscalaAlocacoes
+        // Buscar alocações do guarda em janela de 3 dias antes do RET
+        // para cobrir escalas noturnas (que terminam no dia seguinte)
+        var windowAntes = data.AddDays(-3);
+        var alocacoesAntes = await _context.EscalaAlocacoes
             .Include(a => a.EscalaItem).ThenInclude(i => i.Horario)
-            .Where(a => a.GuardaId == guardaId)
-            .Select(a => new
-            {
-                Fim = a.EscalaItem.Data.ToDateTime(a.EscalaItem.Horario.Fim)
-            })
-            .Where(x => x.Fim <= retInicio)
-            .OrderByDescending(x => x.Fim)
-            .FirstOrDefaultAsync();
+            .Where(a => a.GuardaId == guardaId
+                        && a.EscalaItem.Data >= windowAntes
+                        && a.EscalaItem.Data <= data)
+            .ToListAsync();
 
-        if (escalaBefore != null)
+        // Calcula o fim real de cada escala, considerando turnos noturnos (Fim < Inicio → próximo dia)
+        var fimsAntes = alocacoesAntes
+            .Select(a => a.EscalaItem.Horario.Fim < a.EscalaItem.Horario.Inicio
+                ? a.EscalaItem.Data.AddDays(1).ToDateTime(a.EscalaItem.Horario.Fim)
+                : a.EscalaItem.Data.ToDateTime(a.EscalaItem.Horario.Fim))
+            .Where(fim => fim <= retInicio)
+            .OrderByDescending(fim => fim)
+            .ToList();
+
+        DateTime? escalaBefore = fimsAntes.Count > 0 ? fimsAntes[0] : null;
+
+        if (escalaBefore.HasValue)
         {
-            var intervaloAntes = (retInicio - escalaBefore.Fim).TotalHours;
+            var intervaloAntes = (retInicio - escalaBefore.Value).TotalHours;
             if (intervaloAntes < 12)
                 return $"Descanso insuficiente antes do RET: {intervaloAntes:F1}h (mínimo 12h)";
         }
 
-        // 6. Descanso 12h depois - verificar próxima escala do guarda após o RET
-        var escalaAfter = await _context.EscalaAlocacoes
+        // 5. Descanso 12h depois - verificar próxima escala do guarda após o RET
+        var windowDepois = data.AddDays(3);
+        var alocacoesDepois = await _context.EscalaAlocacoes
             .Include(a => a.EscalaItem).ThenInclude(i => i.Horario)
-            .Where(a => a.GuardaId == guardaId)
-            .Select(a => new
-            {
-                Inicio = a.EscalaItem.Data.ToDateTime(a.EscalaItem.Horario.Inicio)
-            })
-            .Where(x => x.Inicio >= retFim)
-            .OrderBy(x => x.Inicio)
-            .FirstOrDefaultAsync();
+            .Where(a => a.GuardaId == guardaId
+                        && a.EscalaItem.Data >= data
+                        && a.EscalaItem.Data <= windowDepois)
+            .ToListAsync();
 
-        if (escalaAfter != null)
+        var iniciaisDepois = alocacoesDepois
+            .Select(a => a.EscalaItem.Data.ToDateTime(a.EscalaItem.Horario.Inicio))
+            .Where(inicio => inicio >= retFim)
+            .OrderBy(inicio => inicio)
+            .ToList();
+
+        DateTime? escalaAfter = iniciaisDepois.Count > 0 ? iniciaisDepois[0] : null;
+
+        if (escalaAfter.HasValue)
         {
-            var intervaloDepois = (escalaAfter.Inicio - retFim).TotalHours;
+            var intervaloDepois = (escalaAfter.Value - retFim).TotalHours;
             if (intervaloDepois < 12)
                 return $"Descanso insuficiente após o RET: {intervaloDepois:F1}h (mínimo 12h)";
         }
 
-        // 7. Intervalo total >= 32h (se há escala antes E depois)
-        if (escalaBefore != null && escalaAfter != null)
+        // 6. Intervalo total >= 32h (se há escala antes E depois)
+        if (escalaBefore.HasValue && escalaAfter.HasValue)
         {
-            var intervaloTotal = (escalaAfter.Inicio - escalaBefore.Fim).TotalHours;
+            var intervaloTotal = (escalaAfter.Value - escalaBefore.Value).TotalHours;
             if (intervaloTotal < 32)
                 return $"Intervalo total entre escalas insuficiente: {intervaloTotal:F1}h (mínimo 32h)";
         }

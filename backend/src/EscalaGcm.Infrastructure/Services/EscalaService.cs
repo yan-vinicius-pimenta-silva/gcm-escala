@@ -68,6 +68,7 @@ public class EscalaService : IEscalaService
         if (escala == null) return (null, [new ConflictError("ERRO", "Escala não encontrada")]);
         if (escala.Status != StatusEscala.Rascunho) return (null, [new ConflictError("ERRO", "Escala não está em rascunho")]);
 
+        // REVIEW: DateOnly.Parse throws FormatException on bad input -> 500. Use TryParse and return a validation error.
         var data = DateOnly.Parse(request.Data);
 
         // Validate date belongs to the fortnight
@@ -83,6 +84,8 @@ public class EscalaService : IEscalaService
         var allErrors = sectorErrors.Concat(conflictErrors).ToList();
         if (allErrors.Count > 0) return (null, allErrors);
 
+        // REVIEW: Two SaveChangesAsync calls for one logical operation. If the second fails,
+        // an orphaned EscalaItem remains. Use a single SaveChangesAsync or wrap in a transaction.
         var item = new EscalaItem { EscalaId = escalaId, Data = data, TurnoId = request.TurnoId, HorarioId = request.HorarioId, Observacao = request.Observacao };
         _context.EscalaItens.Add(item);
         await _context.SaveChangesAsync();
@@ -116,6 +119,7 @@ public class EscalaService : IEscalaService
         var item = await _context.EscalaItens.Include(i => i.Alocacoes).FirstOrDefaultAsync(i => i.Id == itemId && i.EscalaId == escalaId);
         if (item == null) return (null, [new ConflictError("ERRO", "Item não encontrado")]);
 
+        // REVIEW: Same DateOnly.Parse issue as in AddItemAsync -- use TryParse.
         var data = DateOnly.Parse(request.Data);
         var dateError = ValidateFortnightDate(data, escala.Ano, escala.Mes, escala.Quinzena);
         if (dateError != null) return (null, [new ConflictError("ERRO", dateError)]);
@@ -176,6 +180,8 @@ public class EscalaService : IEscalaService
         return (true, null);
     }
 
+    // REVIEW: Manual cascade delete. Consider configuring cascade delete in EF model config
+    // (OnDelete(DeleteBehavior.Cascade)) so the DB handles this atomically.
     public async Task<(bool Success, string? Error)> DeleteAsync(int id)
     {
         var escala = await _context.Escalas.Include(e => e.Itens).ThenInclude(i => i.Alocacoes).FirstOrDefaultAsync(e => e.Id == id);

@@ -6,5 +6,13 @@ export const retSchema = z.object({
   tipo: z.string().min(1, 'Tipo é obrigatório'),
   eventoId: z.number().optional(),
   observacao: z.string().optional(),
+}).superRefine((val, ctx) => {
+  if (val.tipo === 'Evento' && !val.eventoId) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: 'Evento é obrigatório para RET de Evento',
+      path: ['eventoId'],
+    });
+  }
 });
 export type RetFormData = z.infer<typeof retSchema>;

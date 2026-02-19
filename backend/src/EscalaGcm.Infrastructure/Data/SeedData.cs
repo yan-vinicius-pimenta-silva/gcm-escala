@@ -12,6 +12,8 @@ public static class SeedData
             return;
 
         // ── Usuarios ──
+        // REVIEW: Weak seed passwords (admin123, operador123, consulta123). Acceptable for dev only.
+        // Ensure SeedData never executes in production (current guard is just "any user exists").
         context.Usuarios.Add(new Usuario
         {
             NomeUsuario = "admin",
@@ -236,6 +238,179 @@ public static class SeedData
             new() { GuardaId = guardas[28].Id, DataInicio = new DateOnly(2026, 2, 25), DataFim = new DateOnly(2026, 2, 28), Motivo = MotivoAusencia.AtestadoMedico, Observacoes = "Cirurgia eletiva" },
         };
         context.Ausencias.AddRange(ausencias);
+
+        await context.SaveChangesAsync();
+
+        // ── Eventos ──
+        var carnaval = new Evento
+        {
+            Nome = "Carnaval 2026",
+            DataInicio = new DateOnly(2026, 2, 14),
+            DataFim = new DateOnly(2026, 2, 17)
+        };
+        var festaMunicipal = new Evento
+        {
+            Nome = "Festa Municipal",
+            DataInicio = new DateOnly(2026, 3, 20),
+            DataFim = new DateOnly(2026, 3, 22)
+        };
+        context.Eventos.AddRange(carnaval, festaMunicipal);
+        await context.SaveChangesAsync();
+
+        // ── Escalas de fevereiro/2026 ──
+        // Setor de referência para as escalas de demonstração: RÁDIO PATRULHA 01 (índice 36)
+        var setorRP1 = setores[36]; // RÁDIO PATRULHA 01
+
+        // Quinzena 1 (1-15 fev): turnos diurnos e noturnos
+        var escalaQ1 = new Escala
+        {
+            Ano = 2026, Mes = 2, Quinzena = 1,
+            SetorId = setorRP1.Id, Status = StatusEscala.Publicada
+        };
+        var escalaQ2 = new Escala
+        {
+            Ano = 2026, Mes = 2, Quinzena = 2,
+            SetorId = setorRP1.Id, Status = StatusEscala.Publicada
+        };
+        context.Escalas.AddRange(escalaQ1, escalaQ2);
+        await context.SaveChangesAsync();
+
+        // Itens da quinzena 1: dias ímpares diurnos (Anderson+Bruno), dias pares noturnos (Igor+João)
+        var itensQ1 = new List<EscalaItem>();
+        for (int dia = 1; dia <= 15; dia++)
+        {
+            bool isDiurno = dia % 2 == 1;
+            itensQ1.Add(new EscalaItem
+            {
+                EscalaId = escalaQ1.Id,
+                Data = new DateOnly(2026, 2, dia),
+                TurnoId = isDiurno ? turnoDiurno.Id : turnoNoturno.Id,
+                HorarioId = isDiurno ? h12x36d.Id : h12x36n.Id
+            });
+        }
+        context.EscalaItens.AddRange(itensQ1);
+        await context.SaveChangesAsync();
+
+        // Alocações quinzena 1
+        var alocQ1 = new List<EscalaAlocacao>();
+        foreach (var item in itensQ1)
+        {
+            bool isDiurno = item.HorarioId == h12x36d.Id;
+            alocQ1.Add(new EscalaAlocacao
+            {
+                EscalaItemId = item.Id,
+                GuardaId = isDiurno ? guardas[0].Id : guardas[8].Id, // Anderson (diurno) / Igor (noturno)
+                Funcao = FuncaoAlocacao.Encarregado
+            });
+            alocQ1.Add(new EscalaAlocacao
+            {
+                EscalaItemId = item.Id,
+                GuardaId = isDiurno ? guardas[1].Id : guardas[9].Id, // Bruno (diurno) / João (noturno)
+                Funcao = FuncaoAlocacao.Motorista
+            });
+        }
+        context.EscalaAlocacoes.AddRange(alocQ1);
+
+        // Itens da quinzena 2: dias pares diurnos (Kevin+Lucas), dias ímpares noturnos (Marcos+Nelson)
+        var itensQ2 = new List<EscalaItem>();
+        for (int dia = 16; dia <= 28; dia++)
+        {
+            bool isDiurno = dia % 2 == 0;
+            itensQ2.Add(new EscalaItem
+            {
+                EscalaId = escalaQ2.Id,
+                Data = new DateOnly(2026, 2, dia),
+                TurnoId = isDiurno ? turnoDiurno.Id : turnoNoturno.Id,
+                HorarioId = isDiurno ? h12x36d.Id : h12x36n.Id
+            });
+        }
+        context.EscalaItens.AddRange(itensQ2);
+        await context.SaveChangesAsync();
+
+        var alocQ2 = new List<EscalaAlocacao>();
+        foreach (var item in itensQ2)
+        {
+            bool isDiurno = item.HorarioId == h12x36d.Id;
+            alocQ2.Add(new EscalaAlocacao
+            {
+                EscalaItemId = item.Id,
+                GuardaId = isDiurno ? guardas[10].Id : guardas[12].Id, // Kevin (diurno) / Marcos (noturno)
+                Funcao = FuncaoAlocacao.Encarregado
+            });
+            alocQ2.Add(new EscalaAlocacao
+            {
+                EscalaItemId = item.Id,
+                GuardaId = isDiurno ? guardas[11].Id : guardas[13].Id, // Lucas (diurno) / Nelson (noturno)
+                Funcao = FuncaoAlocacao.Motorista
+            });
+        }
+        context.EscalaAlocacoes.AddRange(alocQ2);
+
+        // ── Escala de março/2026 (demonstração) ──
+        var setorRP2 = setores[37]; // RÁDIO PATRULHA 02
+        var escalaMarQ1 = new Escala
+        {
+            Ano = 2026, Mes = 3, Quinzena = 1,
+            SetorId = setorRP2.Id, Status = StatusEscala.Rascunho
+        };
+        context.Escalas.Add(escalaMarQ1);
+        await context.SaveChangesAsync();
+
+        var itensMarQ1 = new List<EscalaItem>();
+        for (int dia = 1; dia <= 15; dia++)
+        {
+            bool isDiurno = dia % 2 == 1;
+            itensMarQ1.Add(new EscalaItem
+            {
+                EscalaId = escalaMarQ1.Id,
+                Data = new DateOnly(2026, 3, dia),
+                TurnoId = isDiurno ? turnoDiurno.Id : turnoNoturno.Id,
+                HorarioId = isDiurno ? h12x36d.Id : h12x36n.Id
+            });
+        }
+        context.EscalaItens.AddRange(itensMarQ1);
+        await context.SaveChangesAsync();
+
+        foreach (var item in itensMarQ1)
+        {
+            bool isDiurno = item.HorarioId == h12x36d.Id;
+            context.EscalaAlocacoes.Add(new EscalaAlocacao
+            {
+                EscalaItemId = item.Id,
+                GuardaId = isDiurno ? guardas[16].Id : guardas[17].Id, // Rafael (diurno) / Samuel (noturno)
+                Funcao = FuncaoAlocacao.Encarregado
+            });
+            context.EscalaAlocacoes.Add(new EscalaAlocacao
+            {
+                EscalaItemId = item.Id,
+                GuardaId = isDiurno ? guardas[18].Id : guardas[19].Id, // Thiago (diurno) / Ulisses (noturno)
+                Funcao = FuncaoAlocacao.Motorista
+            });
+        }
+
+        // ── RETs de demonstração (fevereiro 2026) ──
+        // Anderson Silva: RET Mensal em 13/02 (entre escalas dos dias 11 e 15)
+        context.Rets.Add(new Ret
+        {
+            GuardaId = guardas[0].Id, // Anderson (diurno: 11, 13, 15)
+            Data = new DateOnly(2026, 2, 13),
+            HorarioInicio = new TimeOnly(7, 0),
+            HorarioFim = new TimeOnly(15, 0),
+            TipoRet = TipoRet.Mensal,
+            Observacao = "RET Mensal de demonstração"
+        });
+
+        // Igor Ferreira: RET Evento (Carnaval) em 19/02
+        context.Rets.Add(new Ret
+        {
+            GuardaId = guardas[8].Id, // Igor (noturno quinzena 1)
+            Data = new DateOnly(2026, 2, 19),
+            HorarioInicio = new TimeOnly(8, 0),
+            HorarioFim = new TimeOnly(16, 0),
+            TipoRet = TipoRet.Evento,
+            EventoId = carnaval.Id,
+            Observacao = "Cobertura pós-Carnaval"
+        });
 
         await context.SaveChangesAsync();
     }

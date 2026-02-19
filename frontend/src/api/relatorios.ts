@@ -14,7 +14,8 @@ export type TipoRelatorio =
   | 'GuardasNaoEscalados'
   | 'Ferias'
   | 'Ausencias'
-  | 'IndividualGuarda';
+  | 'IndividualGuarda'
+  | 'Ret';
 
 export interface RelatorioRequest {
   tipo: TipoRelatorio;

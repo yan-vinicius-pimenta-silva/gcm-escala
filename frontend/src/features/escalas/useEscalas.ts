@@ -6,6 +6,8 @@ import {
 } from '../../api/escalas';
 import type { EscalaFiltersParams, CreateEscalaRequest, AddEscalaItemRequest, UpdateEscalaItemRequest } from '../../api/escalas';
 
+// REVIEW: enabled=false with manual refetch() bypasses TanStack Query's reactive model.
+// Let the query be enabled based on filter state instead of manual refetch.
 export function useEscalas(params: EscalaFiltersParams, enabled: boolean) {
   return useQuery({ queryKey: ['escalas', params], queryFn: () => getEscalas(params), enabled });
 }
