@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Navigate, useNavigate, useLocation } from 'react-router-dom';
 import {
   AppBar, Box, Drawer, IconButton, List, ListItemButton, ListItemIcon, ListItemText,
-  Toolbar, Typography, Divider, Button,
+  Toolbar, Typography, Divider, Button, useTheme, useMediaQuery,
 } from '@mui/material';
 import MenuIcon from '@mui/icons-material/Menu';
 import DomainIcon from '@mui/icons-material/Domain';
@@ -69,12 +69,20 @@ const pages: { path: string; component: React.ComponentType }[] = [
 ];
 
 export default function MainLayout() {
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+
   const [drawerOpen, setDrawerOpen] = useState(true);
   const navigate = useNavigate();
   const location = useLocation();
   const { nomeCompleto, logout } = useAuth();
 
   const [visited, setVisited] = useState<Set<string>>(new Set());
+
+  // Start drawer closed on mobile; auto-close when screen shrinks
+  useEffect(() => {
+    if (isMobile) setDrawerOpen(false);
+  }, [isMobile]);
 
   useEffect(() => {
     setVisited(prev => {
@@ -85,9 +93,33 @@ export default function MainLayout() {
 
   if (location.pathname === '/') return <Navigate to="/setores" />;
 
+  const handleMenuItemClick = (path: string) => {
+    navigate(path);
+    if (isMobile) setDrawerOpen(false);
+  };
+
+  const drawerContent = (
+    <>
+      <Toolbar />
+      <Divider />
+      <List>
+        {menuItems.map((item) => (
+          <ListItemButton
+            key={item.path}
+            selected={location.pathname === item.path}
+            onClick={() => handleMenuItemClick(item.path)}
+          >
+            <ListItemIcon>{item.icon}</ListItemIcon>
+            <ListItemText primary={item.label} />
+          </ListItemButton>
+        ))}
+      </List>
+    </>
+  );
+
   return (
     <Box sx={{ display: 'flex' }}>
-      <AppBar position="fixed" sx={{ zIndex: (theme) => theme.zIndex.drawer + 1 }}>
+      <AppBar position="fixed" sx={{ zIndex: (t) => t.zIndex.drawer + 1 }}>
         <Toolbar>
           <IconButton color="inherit" edge="start" onClick={() => setDrawerOpen(!drawerOpen)} sx={{ mr: 2 }}>
             <MenuIcon />
@@ -95,34 +127,61 @@ export default function MainLayout() {
           <Typography variant="h6" noWrap sx={{ flexGrow: 1 }}>
             Escalas GCM
           </Typography>
-          <Typography variant="body2" sx={{ mr: 2 }}>{nomeCompleto}</Typography>
+          <Typography
+            variant="body2"
+            sx={{
+              mr: 2,
+              display: { xs: 'none', sm: 'block' },
+              maxWidth: 220,
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap',
+            }}
+          >
+            {nomeCompleto}
+          </Typography>
           <Button color="inherit" onClick={() => { logout(); navigate('/login'); }}>Sair</Button>
         </Toolbar>
       </AppBar>
+
+      {/* Drawer temporário (mobile) — sobrepõe o conteúdo com backdrop */}
       <Drawer
-        variant="persistent" open={drawerOpen}
+        variant="temporary"
+        open={isMobile && drawerOpen}
+        onClose={() => setDrawerOpen(false)}
+        ModalProps={{ keepMounted: true }}
         sx={{
+          display: { xs: 'block', md: 'none' },
+          '& .MuiDrawer-paper': { width: DRAWER_WIDTH, boxSizing: 'border-box' },
+        }}
+      >
+        {drawerContent}
+      </Drawer>
+
+      {/* Drawer persistente (desktop) — empurra o conteúdo */}
+      <Drawer
+        variant="persistent"
+        open={drawerOpen}
+        sx={{
+          display: { xs: 'none', md: 'block' },
           width: DRAWER_WIDTH,
           flexShrink: 0,
           '& .MuiDrawer-paper': { width: DRAWER_WIDTH, boxSizing: 'border-box' },
         }}
       >
-        <Toolbar />
-        <Divider />
-        <List>
-          {menuItems.map((item) => (
-            <ListItemButton
-              key={item.path}
-              selected={location.pathname === item.path}
-              onClick={() => navigate(item.path)}
-            >
-              <ListItemIcon>{item.icon}</ListItemIcon>
-              <ListItemText primary={item.label} />
-            </ListItemButton>
-          ))}
-        </List>
+        {drawerContent}
       </Drawer>
-      <Box component="main" sx={{ flexGrow: 1, p: 3, ml: drawerOpen ? `${DRAWER_WIDTH}px` : 0, transition: 'margin 0.3s' }}>
+
+      <Box
+        component="main"
+        sx={{
+          flexGrow: 1,
+          p: { xs: 2, md: 3 },
+          ml: { md: drawerOpen ? `${DRAWER_WIDTH}px` : 0 },
+          transition: 'margin 0.3s',
+          minWidth: 0,
+        }}
+      >
         <Toolbar />
         {/* REVIEW: Hidden pages stay mounted (display:none), keeping all queries, listeners, and timers active.
             Trades memory/network for preserved state. Consider persisting only the data instead. */}

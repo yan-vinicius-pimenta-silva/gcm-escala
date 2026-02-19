@@ -22,8 +22,8 @@ export default function LoginPage() {
   };
 
   return (
-    <Box display="flex" justifyContent="center" alignItems="center" minHeight="100vh" bgcolor="grey.100">
-      <Card sx={{ minWidth: 400 }}>
+    <Box display="flex" justifyContent="center" alignItems="center" minHeight="100vh" bgcolor="grey.100" px={2}>
+      <Card sx={{ width: '100%', maxWidth: 420 }}>
         <CardContent>
           <Typography variant="h5" textAlign="center" mb={3}>
             Sistema de Escalas GCM
