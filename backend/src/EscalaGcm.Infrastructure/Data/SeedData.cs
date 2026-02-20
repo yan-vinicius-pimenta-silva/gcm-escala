@@ -107,9 +107,7 @@ public static class SeedData
         // ── Turnos ──
         var turnoDiurno = new Turno { Nome = "Diurno", Ativo = true };
         var turnoNoturno = new Turno { Nome = "Noturno", Ativo = true };
-        var turnoManha = new Turno { Nome = "Manhã", Ativo = true };
-        var turnoTarde = new Turno { Nome = "Tarde", Ativo = true };
-        context.Turnos.AddRange(turnoDiurno, turnoNoturno, turnoManha, turnoTarde);
+        context.Turnos.AddRange(turnoDiurno, turnoNoturno);
 
         // ── Horarios ──
         var h12x36d = new Horario { Inicio = new TimeOnly(7, 0), Fim = new TimeOnly(19, 0), Descricao = "07:00 - 19:00 (12x36 Diurno)", Ativo = true };

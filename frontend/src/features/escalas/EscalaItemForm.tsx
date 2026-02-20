@@ -35,6 +35,19 @@ function formatDate(ano: number, mes: number, day: number): string {
   return `${ano}-${String(mes).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
 }
 
+function horarioDuracaoMinutos(horario: Horario): number {
+  const [startH, startM] = horario.inicio.split(':').map(Number);
+  const [endH, endM] = horario.fim.split(':').map(Number);
+  const startMin = startH * 60 + startM;
+  const endMin = endH * 60 + endM;
+  return endMin > startMin ? endMin - startMin : 24 * 60 - startMin + endMin;
+}
+
+function isHorarioCompativelComRegime(horario: Horario, regime: RegimeTrabalho): boolean {
+  const duracao = horarioDuracaoMinutos(horario);
+  return regime === RegimeTrabalho.Doze36 ? duracao >= 600 : duracao < 600;
+}
+
 function getGuardaIdFromAlocState(alocState: AlocacaoState): number | null {
   if (alocState.guardaIds.length > 0) return alocState.guardaIds[0];
   if (alocState.motoristaId) return alocState.motoristaId;
@@ -43,15 +56,26 @@ function getGuardaIdFromAlocState(alocState: AlocacaoState): number | null {
   return null;
 }
 
-function chipColor(status: StatusDisponibilidade, selected: boolean) {
+interface LocalBlockInfo {
+  reason: string;
+  availableFrom?: string; // "HH:mm" — dia parcialmente bloqueado, guarda livre a partir deste horário
+}
+
+function chipColor(status: StatusDisponibilidade, selected: boolean, localBlock?: LocalBlockInfo) {
   if (selected) return 'primary';
+  if (localBlock) return localBlock.availableFrom ? 'warning' : 'error';
   if (status === StatusDisponibilidade.Bloqueado) return 'error';
   if (status === StatusDisponibilidade.Parcial) return 'warning';
   return 'default';
 }
 
-function chipTooltip(info: DayAvailabilityDto | undefined, selected: boolean): string {
+function chipTooltip(info: DayAvailabilityDto | undefined, selected: boolean, localBlock?: LocalBlockInfo): string {
   if (selected) return 'Dia já adicionado — clique para remover';
+  if (localBlock) {
+    return localBlock.availableFrom
+      ? `⚠️ ${localBlock.reason}`
+      : `Indisponível — ${localBlock.reason}`;
+  }
   if (!info) return 'Disponível';
   if (info.status === StatusDisponibilidade.Bloqueado) return `Indisponível — ${info.motivo ?? 'guarda ocupado o dia todo'}`;
   if (info.status === StatusDisponibilidade.Parcial) return `⚠️ ${info.motivo ?? `Disponível a partir das ${info.disponibilidadeAPartirDe}`}`;
@@ -67,6 +91,9 @@ export default function EscalaItemForm({ tipoSetor, ano, mes, quinzena, editingI
   const [regime, setRegime] = useState<RegimeTrabalho>(RegimeTrabalho.Doze36);
   const [turnoId, setTurnoId] = useState<number | ''>('');
   const [horarioId, setHorarioId] = useState<number | ''>('');
+
+  // Horários compatíveis com o regime selecionado (12x36 ↔ ≥10h; 8h ↔ <10h)
+  const compatibleHorarios = activeHorarios.filter((h: Horario) => isHorarioCompativelComRegime(h, regime));
   const [selectedDays, setSelectedDays] = useState<number[]>([]);
   const [observacao, setObservacao] = useState('');
   const [alocState, setAlocState] = useState<AlocacaoState>(emptyAlocacaoState);
@@ -90,6 +117,91 @@ export default function EscalaItemForm({ tipoSetor, ano, mes, quinzena, editingI
     for (const info of availability) map.set(info.dia, info);
     return map;
   }, [availability]);
+
+  // Dias localmente bloqueados/parciais pela folga obrigatória 12x36 dos dias já selecionados
+  const locallyBlockedDays = useMemo(() => {
+    if (regime !== RegimeTrabalho.Doze36 || !horarioId || selectedDays.length === 0) {
+      return new Map<number, LocalBlockInfo>();
+    }
+    const horario = activeHorarios.find((h: Horario) => h.id === horarioId);
+    if (!horario) return new Map<number, LocalBlockInfo>();
+
+    const blocked = new Map<number, LocalBlockInfo>();
+    const [startH, startM] = horario.inicio.split(':').map(Number);
+    const [endH, endM] = horario.fim.split(':').map(Number);
+
+    function occ(day: number) {
+      const shiftStart = new Date(ano, mes - 1, day, startH, startM);
+      const shiftEnd = (endH > startH || (endH === startH && endM >= startM))
+        ? new Date(ano, mes - 1, day, endH, endM)
+        : new Date(ano, mes - 1, day + 1, endH, endM);
+      return { shiftStart, occupiedTo: new Date(shiftEnd.getTime() + 36 * 3_600_000) };
+    }
+
+    const selOccs = selectedDays.map(d => ({ day: d, ...occ(d) }));
+
+    for (const checkDay of days) {
+      if (selectedDays.includes(checkDay)) continue;
+      const checkDayStart = new Date(ano, mes - 1, checkDay);
+      const checkDayEnd = new Date(ano, mes - 1, checkDay + 1);
+
+      // Verificação 1 (para frente): o período de folga de um dia selecionado cobre checkDay?
+      for (const { day: selDay, shiftStart, occupiedTo } of selOccs) {
+        if (shiftStart >= checkDayEnd || occupiedTo <= checkDayStart) continue;
+        const existing = blocked.get(checkDay);
+        if (occupiedTo >= checkDayEnd) {
+          if (!existing || existing.availableFrom !== undefined) {
+            blocked.set(checkDay, { reason: `Folga obrigatória 12x36 após o turno do dia ${selDay}` });
+          }
+        } else if (!existing) {
+          const hh = String(occupiedTo.getHours()).padStart(2, '0');
+          const mm = String(occupiedTo.getMinutes()).padStart(2, '0');
+          blocked.set(checkDay, {
+            reason: `Folga 12x36 — disponível a partir das ${hh}:${mm}`,
+            availableFrom: `${hh}:${mm}`,
+          });
+        }
+      }
+
+      // Se já está totalmente bloqueado, não precisa da verificação 2
+      if (blocked.has(checkDay) && !blocked.get(checkDay)!.availableFrom) continue;
+
+      // Verificação 2 (para trás): o período de folga de checkDay cobriria algum dia já selecionado?
+      // Espelha a Verificação 1: bloqueio total se ultrapassa selShiftStart,
+      // bloqueio parcial se termina dentro do selDay mas antes do turno.
+      const { shiftStart: cStart, occupiedTo: cOccTo } = occ(checkDay);
+      for (const { day: selDay, shiftStart: selShiftStart } of selOccs) {
+        if (cStart >= selShiftStart) continue; // checkDay deve ser anterior a selDay
+        const selDayStart = new Date(ano, mes - 1, selDay);
+
+        if (cOccTo > selShiftStart) {
+          // Bloqueio total: folga ultrapassa o turno do dia selecionado
+          blocked.set(checkDay, { reason: `Conflito com o dia ${selDay} já escalado` });
+          break;
+        } else if (cOccTo > selDayStart) {
+          // Bloqueio parcial: folga termina dentro do selDay, antes do turno
+          if (!blocked.has(checkDay)) {
+            const hh = String(cOccTo.getHours()).padStart(2, '0');
+            const mm = String(cOccTo.getMinutes()).padStart(2, '0');
+            blocked.set(checkDay, {
+              reason: `Folga 12x36 — disponível a partir das ${hh}:${mm}`,
+              availableFrom: `${hh}:${mm}`,
+            });
+          }
+        }
+      }
+    }
+    return blocked;
+  }, [selectedDays, regime, horarioId, activeHorarios, days, ano, mes]);
+
+  // Limpa horário selecionado se ele for incompatível com o novo regime
+  useEffect(() => {
+    if (!horarioId) return;
+    const horario = activeHorarios.find((h: Horario) => h.id === horarioId);
+    if (horario && !isHorarioCompativelComRegime(horario, regime)) {
+      setHorarioId('');
+    }
+  }, [regime]);
 
   useEffect(() => {
     if (editingItem) {
@@ -127,8 +239,11 @@ export default function EscalaItemForm({ tipoSetor, ano, mes, quinzena, editingI
 
   function toggleDay(day: number) {
     if (editingItem) return;
+    if (daysLocked) return;
     const info = availabilityMap.get(day);
     if (info?.status === StatusDisponibilidade.Bloqueado) return;
+    const localBlock = locallyBlockedDays.get(day);
+    if (localBlock && !localBlock.availableFrom) return; // bloqueio total: não clicável
     setSelectedDays(prev => prev.includes(day) ? prev.filter(d => d !== day) : [...prev, day]);
   }
 
@@ -147,13 +262,41 @@ export default function EscalaItemForm({ tipoSetor, ano, mes, quinzena, editingI
   }
 
   const isEditing = editingItem !== null;
+  // Dias só ficam disponíveis após regime, turno e horário estarem selecionados
+  const daysLocked = !turnoId || !horarioId;
 
-  // "Todos" selects only available/parcial days
+  // "Todos": para 12x36 usa algoritmo guloso (ordem crescente, respeitando folgas)
   function selectAllAvailable() {
-    setSelectedDays(days.filter(d => {
-      const info = availabilityMap.get(d);
-      return !info || info.status !== StatusDisponibilidade.Bloqueado;
-    }));
+    const serverBlocked = (d: number) => availabilityMap.get(d)?.status === StatusDisponibilidade.Bloqueado;
+
+    if (regime !== RegimeTrabalho.Doze36 || !horarioId) {
+      setSelectedDays(days.filter(d => !serverBlocked(d)));
+      return;
+    }
+
+    const horario = activeHorarios.find((h: Horario) => h.id === horarioId);
+    if (!horario) return;
+
+    const [startH, startM] = horario.inicio.split(':').map(Number);
+    const [endH, endM] = horario.fim.split(':').map(Number);
+
+    function occ(day: number) {
+      const shiftStart = new Date(ano, mes - 1, day, startH, startM);
+      const shiftEnd = (endH > startH || (endH === startH && endM >= startM))
+        ? new Date(ano, mes - 1, day, endH, endM)
+        : new Date(ano, mes - 1, day + 1, endH, endM);
+      return { shiftStart, occupiedTo: new Date(shiftEnd.getTime() + 36 * 3_600_000) };
+    }
+
+    const selected: number[] = [];
+    for (const day of days) {
+      if (serverBlocked(day)) continue;
+      const { shiftStart: dShiftStart } = occ(day);
+      // Conflito: algum dia já selecionado ainda está em folga quando este turno começa
+      const conflicts = selected.some(selDay => occ(selDay).occupiedTo > dShiftStart);
+      if (!conflicts) selected.push(day);
+    }
+    setSelectedDays(selected);
   }
 
   return (
@@ -183,7 +326,7 @@ export default function EscalaItemForm({ tipoSetor, ano, mes, quinzena, editingI
         <FormControl size="small" fullWidth disabled={disabled}>
           <InputLabel>Horario</InputLabel>
           <Select value={horarioId} label="Horario" onChange={(e) => setHorarioId(Number(e.target.value))}>
-            {activeHorarios.map((h: Horario) => <MenuItem key={h.id} value={h.id}>{h.descricao || `${h.inicio} - ${h.fim}`}</MenuItem>)}
+            {compatibleHorarios.map((h: Horario) => <MenuItem key={h.id} value={h.id}>{h.descricao || `${h.inicio} - ${h.fim}`}</MenuItem>)}
           </Select>
         </FormControl>
 
@@ -193,56 +336,65 @@ export default function EscalaItemForm({ tipoSetor, ano, mes, quinzena, editingI
           <Box display="flex" justifyContent="space-between" alignItems="center" mb={0.5}>
             <Typography variant="subtitle2">
               Dias
-              {primaryGuardaId && availability.length > 0 && (
+              {primaryGuardaId && availability.length > 0 && !daysLocked && (
                 <Typography component="span" variant="caption" ml={1} color="text.secondary">
                   (disponibilidade calculada)
                 </Typography>
               )}
             </Typography>
-            {!isEditing && !disabled && (
+            {!isEditing && !disabled && !daysLocked && (
               <Box>
                 <Button size="small" onClick={selectAllAvailable}>Todos</Button>
                 <Button size="small" onClick={() => setSelectedDays([])}>Limpar</Button>
               </Box>
             )}
           </Box>
-          {primaryGuardaId && availability.length > 0 && (
-            <Box display="flex" gap={1} mb={0.5} flexWrap="wrap">
-              <Typography variant="caption" sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                <Box component="span" sx={{ width: 10, height: 10, borderRadius: '50%', bgcolor: 'success.main', display: 'inline-block' }} /> Disponível
-              </Typography>
-              <Typography variant="caption" sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                <Box component="span" sx={{ width: 10, height: 10, borderRadius: '50%', bgcolor: 'warning.main', display: 'inline-block' }} /> Parcial
-              </Typography>
-              <Typography variant="caption" sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                <Box component="span" sx={{ width: 10, height: 10, borderRadius: '50%', bgcolor: 'error.main', display: 'inline-block' }} /> Bloqueado
-              </Typography>
-            </Box>
+          {daysLocked && !isEditing && !disabled ? (
+            <Typography variant="caption" color="text.disabled">
+              Selecione o turno e o horário para habilitar a escolha de dias.
+            </Typography>
+          ) : (
+            <>
+              {primaryGuardaId && availability.length > 0 && (
+                <Box display="flex" gap={1} mb={0.5} flexWrap="wrap">
+                  <Typography variant="caption" sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                    <Box component="span" sx={{ width: 10, height: 10, borderRadius: '50%', bgcolor: 'success.main', display: 'inline-block' }} /> Disponível
+                  </Typography>
+                  <Typography variant="caption" sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                    <Box component="span" sx={{ width: 10, height: 10, borderRadius: '50%', bgcolor: 'warning.main', display: 'inline-block' }} /> Parcial
+                  </Typography>
+                  <Typography variant="caption" sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                    <Box component="span" sx={{ width: 10, height: 10, borderRadius: '50%', bgcolor: 'error.main', display: 'inline-block' }} /> Bloqueado
+                  </Typography>
+                </Box>
+              )}
+              <Stack direction="row" flexWrap="wrap" gap={0.5}>
+                {days.map(day => {
+                  const info = availabilityMap.get(day);
+                  const selected = selectedDays.includes(day);
+                  const localBlock = locallyBlockedDays.get(day);
+                  const fullyBlocked = info?.status === StatusDisponibilidade.Bloqueado || (!!localBlock && !localBlock.availableFrom);
+                  const color = chipColor(info?.status ?? StatusDisponibilidade.Disponivel, selected, localBlock);
+                  const tooltip = chipTooltip(info, selected, localBlock);
+                  return (
+                    <Tooltip key={day} title={tooltip} arrow placement="top">
+                      <span>
+                        <Chip
+                          label={day}
+                          size="small"
+                          color={color}
+                          onClick={() => !disabled && toggleDay(day)}
+                          variant={selected ? 'filled' : 'outlined'}
+                          disabled={disabled || fullyBlocked || (isEditing && !selected)}
+                          sx={fullyBlocked ? { cursor: 'not-allowed', opacity: 0.6 } : undefined}
+                        />
+                      </span>
+                    </Tooltip>
+                  );
+                })}
+              </Stack>
+            </>
           )}
-          <Stack direction="row" flexWrap="wrap" gap={0.5}>
-            {days.map(day => {
-              const info = availabilityMap.get(day);
-              const selected = selectedDays.includes(day);
-              const blocked = info?.status === StatusDisponibilidade.Bloqueado;
-              const color = chipColor(info?.status ?? StatusDisponibilidade.Disponivel, selected);
-              const tooltip = chipTooltip(info, selected);
-              return (
-                <Tooltip key={day} title={tooltip} arrow placement="top">
-                  <span>
-                    <Chip
-                      label={day}
-                      size="small"
-                      color={color}
-                      onClick={() => !disabled && toggleDay(day)}
-                      variant={selected ? 'filled' : 'outlined'}
-                      disabled={disabled || blocked || (isEditing && !selected)}
-                      sx={blocked ? { cursor: 'not-allowed', opacity: 0.6 } : undefined}
-                    />
-                  </span>
-                </Tooltip>
-              );
-            })}
-          </Stack>
         </Box>
 
         <TextField
