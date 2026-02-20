@@ -29,7 +29,9 @@
       "Bash(sqlite3:*)",
       "Bash(ls:*)",
       "Bash(pkill:*)",
-      "Bash(fuser:*)"
+      "Bash(fuser:*)",
+      "Bash(npx vite build)",
+      "Bash(node -e:*)"
     ]
   }
 }
