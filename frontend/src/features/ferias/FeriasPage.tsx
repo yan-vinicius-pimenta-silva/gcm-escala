@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { DataGrid, type GridColDef } from '@mui/x-data-grid';
-import { IconButton } from '@mui/material';
+import { Box, IconButton } from '@mui/material';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import { useSnackbar } from 'notistack';
@@ -49,7 +49,9 @@ export default function FeriasPage() {
   return (
     <>
       <PageHeader title="Férias" onAdd={() => { setEditItem(null); setFormOpen(true); }} />
-      <DataGrid rows={items} columns={columns} loading={isLoading} autoHeight pageSizeOptions={[10, 25, 50]} initialState={{ pagination: { paginationModel: { pageSize: 10 } } }} />
+      <Box sx={{ width: '100%', overflowX: 'auto' }}>
+        <DataGrid rows={items} columns={columns} loading={isLoading} autoHeight pageSizeOptions={[10, 25, 50]} initialState={{ pagination: { paginationModel: { pageSize: 10 } } }} />
+      </Box>
       <FeriasForm open={formOpen} onClose={() => setFormOpen(false)} onSubmit={handleSubmit} editData={editItem} />
       <ConfirmDialog open={deleteId !== null} title="Excluir Férias" message="Tem certeza que deseja excluir estas férias?" onConfirm={handleDelete} onCancel={() => setDeleteId(null)} />
     </>

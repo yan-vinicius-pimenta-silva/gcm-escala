@@ -177,8 +177,6 @@ export default function MainLayout() {
         sx={{
           flexGrow: 1,
           p: { xs: 2, md: 3 },
-          ml: { md: drawerOpen ? `${DRAWER_WIDTH}px` : 0 },
-          transition: 'margin 0.3s',
           minWidth: 0,
         }}
       >
@@ -187,7 +185,7 @@ export default function MainLayout() {
             Trades memory/network for preserved state. Consider persisting only the data instead. */}
         {pages.map(({ path, component: Component }) => (
           visited.has(path) && (
-            <div key={path} style={{ display: location.pathname === path ? 'block' : 'none' }}>
+            <div key={path} style={{ display: location.pathname === path ? 'block' : 'none', width: '100%', overflowX: 'hidden' }}>
               <Component />
             </div>
           )

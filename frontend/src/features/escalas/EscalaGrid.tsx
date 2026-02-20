@@ -1,5 +1,5 @@
 import { DataGrid, type GridColDef } from '@mui/x-data-grid';
-import { IconButton } from '@mui/material';
+import { Box, IconButton } from '@mui/material';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import type { EscalaItem, EscalaAlocacao } from '../../types';
@@ -80,10 +80,12 @@ export default function EscalaGrid({ items, onEdit, onDelete, isReadOnly }: Prop
   }
 
   return (
-    <DataGrid
-      rows={rows} columns={columns} autoHeight
-      pageSizeOptions={[10, 25, 50]}
-      initialState={{ pagination: { paginationModel: { pageSize: 25 } } }}
-    />
+    <Box sx={{ width: '100%', overflowX: 'auto' }}>
+      <DataGrid
+        rows={rows} columns={columns} autoHeight
+        pageSizeOptions={[10, 25, 50]}
+        initialState={{ pagination: { paginationModel: { pageSize: 25 } } }}
+      />
+    </Box>
   );
 }

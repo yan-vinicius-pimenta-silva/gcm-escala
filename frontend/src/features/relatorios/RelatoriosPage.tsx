@@ -96,11 +96,13 @@ export default function RelatoriosPage() {
           {rows.length === 0 ? (
             <Typography color="text.secondary">Não há registros</Typography>
           ) : (
-            <DataGrid
-              rows={rows} columns={columns} autoHeight
-              pageSizeOptions={[10, 25, 50]}
-              initialState={{ pagination: { paginationModel: { pageSize: 25 } } }}
-            />
+            <Box sx={{ width: '100%', overflowX: 'auto' }}>
+              <DataGrid
+                rows={rows} columns={columns} autoHeight
+                pageSizeOptions={[10, 25, 50]}
+                initialState={{ pagination: { paginationModel: { pageSize: 25 } } }}
+              />
+            </Box>
           )}
         </>
       )}

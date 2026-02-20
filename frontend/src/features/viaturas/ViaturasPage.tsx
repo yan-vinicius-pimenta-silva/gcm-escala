@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { DataGrid, type GridColDef } from '@mui/x-data-grid';
-import { Chip, IconButton } from '@mui/material';
+import { Box, Chip, IconButton } from '@mui/material';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import { useSnackbar } from 'notistack';
@@ -42,7 +42,9 @@ export default function ViaturasPage() {
   return (
     <>
       <PageHeader title="Viaturas" onAdd={() => { setEditItem(null); setFormOpen(true); }} />
-      <DataGrid rows={items} columns={columns} loading={isLoading} autoHeight pageSizeOptions={[10, 25, 50]} initialState={{ pagination: { paginationModel: { pageSize: 10 } } }} />
+      <Box sx={{ width: '100%', overflowX: 'auto' }}>
+        <DataGrid rows={items} columns={columns} loading={isLoading} autoHeight pageSizeOptions={[10, 25, 50]} initialState={{ pagination: { paginationModel: { pageSize: 10 } } }} />
+      </Box>
       <ViaturaForm open={formOpen} onClose={() => setFormOpen(false)} onSubmit={handleSubmit} editData={editItem} />
       <ConfirmDialog open={deleteId !== null} title="Excluir Viatura" message="Tem certeza que deseja excluir esta viatura?" onConfirm={handleDelete} onCancel={() => setDeleteId(null)} />
     </>
