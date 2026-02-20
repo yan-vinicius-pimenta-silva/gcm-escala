@@ -1,10 +1,11 @@
 import apiClient from './client';
-import type { Escala } from '../types';
+import type { Escala, DayAvailabilityDto } from '../types';
+import { RegimeTrabalho } from '../types';
 
 export interface CreateEscalaRequest { ano: number; mes: number; quinzena: number; setorId: number; }
 export interface AlocacaoRequest { guardaId?: number; equipeId?: number; funcao: string; viaturaId?: number; }
-export interface AddEscalaItemRequest { data: string; turnoId: number; horarioId: number; observacao?: string; alocacoes: AlocacaoRequest[]; }
-export interface UpdateEscalaItemRequest { data: string; turnoId: number; horarioId: number; observacao?: string; alocacoes: AlocacaoRequest[]; }
+export interface AddEscalaItemRequest { data: string; turnoId: number; horarioId: number; regime: RegimeTrabalho; observacao?: string; alocacoes: AlocacaoRequest[]; }
+export interface UpdateEscalaItemRequest { data: string; turnoId: number; horarioId: number; regime: RegimeTrabalho; observacao?: string; alocacoes: AlocacaoRequest[]; }
 export interface ConflictError { tipo: string; mensagem: string; }
 export interface EscalaFiltersParams { ano?: number; mes?: number; quinzena?: number; setorId?: number; }
 
@@ -16,3 +17,5 @@ export const updateEscalaItem = (escalaId: number, itemId: number, data: UpdateE
 export const deleteEscalaItem = (escalaId: number, itemId: number) => apiClient.delete(`/escalas/${escalaId}/itens/${itemId}`);
 export const publicarEscala = (id: number) => apiClient.post(`/escalas/${id}/publicar`).then(r => r.data);
 export const deleteEscala = (id: number) => apiClient.delete(`/escalas/${id}`);
+export const getGuardaDisponibilidade = (guardaId: number, ano: number, mes: number) =>
+  apiClient.get<DayAvailabilityDto[]>(`/guardas/${guardaId}/disponibilidade`, { params: { ano, mes } }).then(r => r.data);

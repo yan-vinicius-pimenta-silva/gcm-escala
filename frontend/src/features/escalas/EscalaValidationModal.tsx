@@ -4,6 +4,8 @@ import EventBusyIcon from '@mui/icons-material/EventBusy';
 import WarningIcon from '@mui/icons-material/Warning';
 import RuleIcon from '@mui/icons-material/Rule';
 import PeopleIcon from '@mui/icons-material/People';
+import HourglassBottomIcon from '@mui/icons-material/HourglassBottom';
+import SecurityIcon from '@mui/icons-material/Security';
 import type { ConflictError } from '../../api/escalas';
 
 const iconMap: Record<string, React.ReactNode> = {
@@ -12,6 +14,8 @@ const iconMap: Record<string, React.ReactNode> = {
   CONFLITO_ESCALA: <WarningIcon color="error" />,
   REGRA_SETOR: <RuleIcon color="info" />,
   GUARDA_DUPLICADO: <PeopleIcon color="error" />,
+  FOLGA_12X36: <HourglassBottomIcon color="warning" />,
+  RET: <SecurityIcon color="info" />,
 };
 
 interface Props {

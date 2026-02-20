@@ -79,14 +79,14 @@ public class EscalaService : IEscalaService
         var sectorErrors = _sectorRuleService.ValidateSectorRules(escala.Setor.Tipo, request.Alocacoes);
 
         // Validate conflicts
-        var conflictErrors = await _conflictService.ValidateAllocationsAsync(data, request.HorarioId, request.Alocacoes);
+        var conflictErrors = await _conflictService.ValidateAllocationsAsync(data, request.HorarioId, request.Alocacoes, null, request.Regime);
 
         var allErrors = sectorErrors.Concat(conflictErrors).ToList();
         if (allErrors.Count > 0) return (null, allErrors);
 
         // REVIEW: Two SaveChangesAsync calls for one logical operation. If the second fails,
         // an orphaned EscalaItem remains. Use a single SaveChangesAsync or wrap in a transaction.
-        var item = new EscalaItem { EscalaId = escalaId, Data = data, TurnoId = request.TurnoId, HorarioId = request.HorarioId, Observacao = request.Observacao };
+        var item = new EscalaItem { EscalaId = escalaId, Data = data, TurnoId = request.TurnoId, HorarioId = request.HorarioId, Regime = request.Regime, Observacao = request.Observacao };
         _context.EscalaItens.Add(item);
         await _context.SaveChangesAsync();
 
@@ -125,13 +125,14 @@ public class EscalaService : IEscalaService
         if (dateError != null) return (null, [new ConflictError("ERRO", dateError)]);
 
         var sectorErrors = _sectorRuleService.ValidateSectorRules(escala.Setor.Tipo, request.Alocacoes);
-        var conflictErrors = await _conflictService.ValidateAllocationsAsync(data, request.HorarioId, request.Alocacoes, itemId);
+        var conflictErrors = await _conflictService.ValidateAllocationsAsync(data, request.HorarioId, request.Alocacoes, itemId, request.Regime);
         var allErrors = sectorErrors.Concat(conflictErrors).ToList();
         if (allErrors.Count > 0) return (null, allErrors);
 
         item.Data = data;
         item.TurnoId = request.TurnoId;
         item.HorarioId = request.HorarioId;
+        item.Regime = request.Regime;
         item.Observacao = request.Observacao;
 
         _context.EscalaAlocacoes.RemoveRange(item.Alocacoes);
@@ -208,7 +209,7 @@ public class EscalaService : IEscalaService
 
     private static EscalaItemDto MapItem(EscalaItem i) => new(
         i.Id, i.EscalaId, i.Data.ToString("yyyy-MM-dd"),
-        i.TurnoId, i.Turno.Nome, i.HorarioId, i.Horario.Descricao, i.Observacao,
+        i.TurnoId, i.Turno.Nome, i.HorarioId, i.Horario.Descricao, i.Regime, i.Observacao,
         i.Alocacoes.Select(a => new EscalaAlocacaoDto(
             a.Id, a.GuardaId, a.Guarda?.Nome, a.EquipeId, FormatEquipeNomeComIntegrantes(a.Equipe),
             a.Funcao, a.ViaturaId, a.Viatura?.Identificador)).ToList());

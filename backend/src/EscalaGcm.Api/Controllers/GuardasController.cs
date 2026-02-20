@@ -11,7 +11,13 @@ namespace EscalaGcm.Api.Controllers;
 public class GuardasController : ControllerBase
 {
     private readonly IGuardaService _service;
-    public GuardasController(IGuardaService service) => _service = service;
+    private readonly IGuardaAvailabilityService _availabilityService;
+
+    public GuardasController(IGuardaService service, IGuardaAvailabilityService availabilityService)
+    {
+        _service = service;
+        _availabilityService = availabilityService;
+    }
 
     [HttpGet]
     public async Task<IActionResult> GetAll() => Ok(await _service.GetAllAsync());
@@ -43,5 +49,14 @@ public class GuardasController : ControllerBase
         var (success, error) = await _service.DeleteAsync(id);
         if (!success) return BadRequest(new { message = error });
         return NoContent();
+    }
+
+    [HttpGet("{id}/disponibilidade")]
+    public async Task<IActionResult> GetDisponibilidade(int id, [FromQuery] int ano, [FromQuery] int mes)
+    {
+        if (ano <= 0 || mes < 1 || mes > 12)
+            return BadRequest(new { message = "Ano e mês inválidos" });
+        var result = await _availabilityService.GetAvailabilityAsync(id, ano, mes);
+        return Ok(result);
     }
 }

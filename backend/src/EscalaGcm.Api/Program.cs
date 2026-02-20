@@ -54,6 +54,7 @@ builder.Services.AddScoped<IEscalaService, EscalaService>();
 builder.Services.AddScoped<IRelatorioService, RelatorioService>();
 builder.Services.AddScoped<IEventoService, EventoService>();
 builder.Services.AddScoped<IRetService, RetService>();
+builder.Services.AddScoped<IGuardaAvailabilityService, GuardaAvailabilityService>();
 
 // Controllers
 builder.Services.AddControllers()

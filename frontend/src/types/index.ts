@@ -1,4 +1,15 @@
 // Enums matching backend
+export enum RegimeTrabalho {
+  Doze36 = 'Doze36',
+  OitoHoras = 'OitoHoras',
+}
+
+export enum StatusDisponibilidade {
+  Disponivel = 'Disponivel',
+  Parcial = 'Parcial',
+  Bloqueado = 'Bloqueado',
+}
+
 export enum TipoSetor {
   Padrao = 'Padrao',
   CentralComunicacoes = 'CentralComunicacoes',
@@ -135,10 +146,19 @@ export interface EscalaItem {
   turnoNome?: string;
   horarioId: number;
   horarioDescricao?: string;
+  regime: RegimeTrabalho;
   observacao?: string;
   turno?: Turno;
   horario?: Horario;
   alocacoes?: EscalaAlocacao[];
+}
+
+export interface DayAvailabilityDto {
+  dia: number;
+  status: StatusDisponibilidade;
+  disponibilidadeAPartirDe?: string;
+  motivo?: string;
+  tipoMotivo?: string;
 }
 
 export interface EscalaAlocacao {

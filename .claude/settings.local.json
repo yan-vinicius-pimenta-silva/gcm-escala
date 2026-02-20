@@ -23,7 +23,13 @@
       "Bash(tasklist:*)",
       "Bash(findstr:*)",
       "Bash(dir:*)",
-      "Bash(dotnet test:*)"
+      "Bash(dotnet test:*)",
+      "Bash(dotnet tool list:*)",
+      "Bash(export PATH=\"$HOME/.dotnet/tools:$PATH\")",
+      "Bash(sqlite3:*)",
+      "Bash(ls:*)",
+      "Bash(pkill:*)",
+      "Bash(fuser:*)"
     ]
   }
 }
