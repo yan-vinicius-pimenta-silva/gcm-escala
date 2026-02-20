@@ -1,5 +1,7 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ThemeProvider, createTheme, CssBaseline, responsiveFontSizes } from '@mui/material';
+import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
+import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { SnackbarProvider } from 'notistack';
 import { AuthProvider } from './contexts/AuthContext';
 import AppRoutes from './routes/AppRoutes';
@@ -19,6 +21,7 @@ const theme = responsiveFontSizes(createTheme({
 
 function App() {
   return (
+    <LocalizationProvider dateAdapter={AdapterDayjs}>
     <ThemeProvider theme={theme}>
       <CssBaseline />
       <SnackbarProvider maxSnack={3} anchorOrigin={{ vertical: 'top', horizontal: 'right' }}>
@@ -29,6 +32,7 @@ function App() {
         </QueryClientProvider>
       </SnackbarProvider>
     </ThemeProvider>
+    </LocalizationProvider>
   );
 }
 

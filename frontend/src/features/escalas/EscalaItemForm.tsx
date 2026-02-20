@@ -265,7 +265,11 @@ export default function EscalaItemForm({ tipoSetor, ano, mes, quinzena, editingI
   // Dias só ficam disponíveis após regime, turno e horário estarem selecionados
   const daysLocked = !turnoId || !horarioId;
 
-  // "Todos": para 12x36 usa algoritmo guloso (ordem crescente, respeitando folgas)
+  // "Todos": completa os dias disponíveis respeitando regime 12x36.
+  // Com dias pré-selecionados como âncoras:
+  //   - Passa crescente a partir do maior dia selecionado (expansão para frente)
+  //   - Passa decrescente a partir do menor dia selecionado (expansão para trás)
+  // Sem seleção prévia: greedy crescente do início (comportamento original).
   function selectAllAvailable() {
     const serverBlocked = (d: number) => availabilityMap.get(d)?.status === StatusDisponibilidade.Bloqueado;
 
@@ -288,15 +292,42 @@ export default function EscalaItemForm({ tipoSetor, ano, mes, quinzena, editingI
       return { shiftStart, occupiedTo: new Date(shiftEnd.getTime() + 36 * 3_600_000) };
     }
 
-    const selected: number[] = [];
-    for (const day of days) {
-      if (serverBlocked(day)) continue;
-      const { shiftStart: dShiftStart } = occ(day);
-      // Conflito: algum dia já selecionado ainda está em folga quando este turno começa
-      const conflicts = selected.some(selDay => occ(selDay).occupiedTo > dShiftStart);
-      if (!conflicts) selected.push(day);
+    // Retorna true se o candidato conflita com qualquer dia já no conjunto.
+    // selDay < candidate → folga do selDay não pode invadir o turno do candidato.
+    // selDay > candidate → folga do candidato não pode invadir o turno do selDay.
+    function conflictsWithSet(candidate: number, against: Set<number>): boolean {
+      const candOcc = occ(candidate);
+      return [...against].some(selDay => {
+        const selOcc = occ(selDay);
+        return selDay < candidate
+          ? selOcc.occupiedTo > candOcc.shiftStart
+          : candOcc.occupiedTo > selOcc.shiftStart;
+      });
     }
-    setSelectedDays(selected);
+
+    const allSelected = new Set(selectedDays);
+
+    if (allSelected.size === 0) {
+      // Sem âncoras: greedy crescente do início (comportamento original)
+      for (const day of days) {
+        if (!serverBlocked(day) && !conflictsWithSet(day, allSelected)) allSelected.add(day);
+      }
+    } else {
+      const minSel = Math.min(...allSelected);
+      const maxSel = Math.max(...allSelected);
+
+      // Expansão para frente: passa crescente a partir do dia máximo selecionado
+      for (const day of days.filter(d => d > maxSel)) {
+        if (!serverBlocked(day) && !conflictsWithSet(day, allSelected)) allSelected.add(day);
+      }
+
+      // Expansão para trás: passa decrescente a partir do dia mínimo selecionado
+      for (const day of [...days].filter(d => d < minSel).reverse()) {
+        if (!serverBlocked(day) && !conflictsWithSet(day, allSelected)) allSelected.add(day);
+      }
+    }
+
+    setSelectedDays([...allSelected].sort((a, b) => a - b));
   }
 
   return (
