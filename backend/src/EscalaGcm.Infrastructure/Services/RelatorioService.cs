@@ -186,7 +186,7 @@ public class RelatorioService : IRelatorioService
             .OrderBy(e => e.Ano).ThenBy(e => e.Mes).ThenBy(e => e.Quinzena)
             .ToListAsync();
 
-        var linhas = new List<Dictionary<string, string>>();
+        var items = new List<(DateOnly Data, string Setor, string Turno, string Horario, string Alocados, string Viaturas, string Status)>();
 
         foreach (var escala in escalas)
         {
@@ -200,22 +200,37 @@ public class RelatorioService : IRelatorioService
                     .Cast<string>()
                     .Distinct());
 
-                linhas.Add(new Dictionary<string, string>
-                {
-                    ["Data"] = item.Data.ToString("dd/MM/yyyy"),
-                    ["Setor"] = escala.Setor?.Nome ?? string.Empty,
-                    ["Turno"] = item.Turno?.Nome ?? string.Empty,
-                    ["Horario"] = item.Horario != null ? $"{item.Horario.Inicio} - {item.Horario.Fim}" : string.Empty,
-                    ["Alocados"] = alocados,
-                    ["Viaturas"] = viaturas,
-                    ["Status"] = escala.Status.ToString(),
-                });
+                items.Add((
+                    item.Data,
+                    escala.Setor?.Nome ?? string.Empty,
+                    item.Turno?.Nome ?? string.Empty,
+                    item.Horario != null ? $"{item.Horario.Inicio} - {item.Horario.Fim}" : string.Empty,
+                    alocados,
+                    viaturas,
+                    escala.Status.ToString()
+                ));
             }
         }
 
+        var linhas = items
+            .GroupBy(x => (x.Setor, x.Turno, x.Horario, x.Alocados, x.Viaturas, x.Status))
+            .OrderBy(g => g.Key.Setor)
+            .ThenBy(g => g.Min(x => x.Data))
+            .Select(g => new Dictionary<string, string>
+            {
+                ["Dias"] = FormatarDatasCompletas(g.Select(x => x.Data)),
+                ["Setor"] = g.Key.Setor,
+                ["Turno"] = g.Key.Turno,
+                ["Horario"] = g.Key.Horario,
+                ["Alocados"] = g.Key.Alocados,
+                ["Viaturas"] = g.Key.Viaturas,
+                ["Status"] = g.Key.Status,
+            })
+            .ToList();
+
         return new RelatorioResult(
             $"Relatorio de Escalas - {inicio:MM/yyyy} a {fim:MM/yyyy}",
-            new List<string> { "Data", "Setor", "Turno", "Horario", "Alocados", "Viaturas", "Status" },
+            new List<string> { "Dias", "Setor", "Turno", "Horario", "Alocados", "Viaturas", "Status" },
             linhas);
     }
 
@@ -232,8 +247,8 @@ public class RelatorioService : IRelatorioService
         if (req.SetorId.HasValue) query = query.Where(e => e.SetorId == req.SetorId.Value);
 
         var escalas = await query.ToListAsync();
-        var colunas = new List<string> { "Setor", "Quinzena", "Data", "Turno", "Horario", "Alocados", "Integrantes Equipe", "Status" };
-        var linhas = new List<Dictionary<string, string>>();
+
+        var items = new List<(DateOnly Data, string Setor, string Quinzena, string Turno, string Horario, string Alocados, string IntegrantesEquipe, string Status)>();
 
         foreach (var escala in escalas)
         {
@@ -247,19 +262,38 @@ public class RelatorioService : IRelatorioService
                     .Where(v => !string.IsNullOrWhiteSpace(v))
                     .Distinct());
 
-                linhas.Add(new Dictionary<string, string>
-                {
-                    ["Setor"] = escala.Setor?.Nome ?? "",
-                    ["Quinzena"] = escala.Quinzena.ToString(),
-                    ["Data"] = item.Data.ToString("dd/MM/yyyy"),
-                    ["Turno"] = item.Turno?.Nome ?? "",
-                    ["Horario"] = item.Horario != null ? $"{item.Horario.Inicio} - {item.Horario.Fim}" : "",
-                    ["Alocados"] = alocados,
-                    ["Integrantes Equipe"] = integrantesEquipe,
-                    ["Status"] = escala.Status.ToString(),
-                });
+                items.Add((
+                    item.Data,
+                    escala.Setor?.Nome ?? "",
+                    escala.Quinzena.ToString(),
+                    item.Turno?.Nome ?? "",
+                    item.Horario != null ? $"{item.Horario.Inicio} - {item.Horario.Fim}" : "",
+                    alocados,
+                    integrantesEquipe,
+                    escala.Status.ToString()
+                ));
             }
         }
+
+        var colunas = new List<string> { "Setor", "Quinzena", "Dias", "Turno", "Horario", "Alocados", "Integrantes Equipe", "Status" };
+
+        var linhas = items
+            .GroupBy(x => (x.Setor, x.Quinzena, x.Turno, x.Horario, x.Alocados, x.IntegrantesEquipe, x.Status))
+            .OrderBy(g => g.Key.Setor)
+            .ThenBy(g => g.Key.Quinzena)
+            .ThenBy(g => g.Min(x => x.Data))
+            .Select(g => new Dictionary<string, string>
+            {
+                ["Setor"] = g.Key.Setor,
+                ["Quinzena"] = g.Key.Quinzena,
+                ["Dias"] = FormatarDias(g.Select(x => x.Data)),
+                ["Turno"] = g.Key.Turno,
+                ["Horario"] = g.Key.Horario,
+                ["Alocados"] = g.Key.Alocados,
+                ["Integrantes Equipe"] = g.Key.IntegrantesEquipe,
+                ["Status"] = g.Key.Status,
+            })
+            .ToList();
 
         return new RelatorioResult($"Escala Mensal por Setor - {req.Mes:D2}/{req.Ano}", colunas, linhas);
     }
@@ -273,6 +307,54 @@ public class RelatorioService : IRelatorioService
             .ToList();
 
         return integrantes.Count == 0 ? string.Empty : $"{equipe.Nome}: {string.Join(", ", integrantes)}";
+    }
+
+    /// <summary>
+    /// Formata uma lista de datas como números de dias, agrupando consecutivos em intervalos.
+    /// Ex: [1,2,3,5,6,8] → "01-03, 05-06, 08"
+    /// </summary>
+    private static string FormatarDias(IEnumerable<DateOnly> datas)
+    {
+        var dias = datas.Select(d => d.Day).OrderBy(d => d).Distinct().ToList();
+        var partes = new List<string>();
+        int i = 0;
+        while (i < dias.Count)
+        {
+            int inicio = dias[i];
+            int fim = inicio;
+            while (i + 1 < dias.Count && dias[i + 1] == dias[i] + 1)
+            {
+                i++;
+                fim = dias[i];
+            }
+            partes.Add(inicio == fim ? $"{inicio:D2}" : $"{inicio:D2}-{fim:D2}");
+            i++;
+        }
+        return string.Join(", ", partes);
+    }
+
+    /// <summary>
+    /// Formata uma lista de datas como dd/MM, agrupando consecutivos em intervalos.
+    /// Usada em relatórios multi-mês. Ex: [01/02, 02/02, 05/03] → "01/02-02/02, 05/03"
+    /// </summary>
+    private static string FormatarDatasCompletas(IEnumerable<DateOnly> datas)
+    {
+        var sorted = datas.OrderBy(d => d).Distinct().ToList();
+        var partes = new List<string>();
+        int i = 0;
+        while (i < sorted.Count)
+        {
+            var inicio = sorted[i];
+            var fim = inicio;
+            while (i + 1 < sorted.Count && sorted[i + 1] == sorted[i].AddDays(1))
+            {
+                i++;
+                fim = sorted[i];
+            }
+            partes.Add(inicio == fim ? $"{inicio:dd/MM}" : $"{inicio:dd/MM}-{fim:dd/MM}");
+            i++;
+        }
+        return string.Join(", ", partes);
     }
 
     private async Task<RelatorioResult> GuardasEscalados(RelatorioRequest req)
@@ -404,14 +486,26 @@ public class RelatorioService : IRelatorioService
             .OrderBy(a => a.EscalaItem.Data)
             .ToListAsync();
 
-        var linhas = alocacoes.Select(a => new Dictionary<string, string>
-        {
-            ["Data"] = a.EscalaItem.Data.ToString("dd/MM/yyyy"),
-            ["Setor"] = a.EscalaItem.Escala.Setor?.Nome ?? "",
-            ["Turno"] = a.EscalaItem.Turno?.Nome ?? "",
-            ["Horario"] = a.EscalaItem.Horario != null ? $"{a.EscalaItem.Horario.Inicio} - {a.EscalaItem.Horario.Fim}" : "",
-            ["Funcao"] = a.Funcao.ToString(),
-        }).ToList();
+        var escalaItems = alocacoes.Select(a => (
+            Data: a.EscalaItem.Data,
+            Setor: a.EscalaItem.Escala.Setor?.Nome ?? "",
+            Turno: a.EscalaItem.Turno?.Nome ?? "",
+            Horario: a.EscalaItem.Horario != null ? $"{a.EscalaItem.Horario.Inicio} - {a.EscalaItem.Horario.Fim}" : "",
+            Funcao: a.Funcao.ToString()
+        )).ToList();
+
+        var linhas = escalaItems
+            .GroupBy(x => (x.Setor, x.Turno, x.Horario, x.Funcao))
+            .OrderBy(g => g.Min(x => x.Data))
+            .Select(g => new Dictionary<string, string>
+            {
+                ["Dias"] = FormatarDias(g.Select(x => x.Data)),
+                ["Setor"] = g.Key.Setor,
+                ["Turno"] = g.Key.Turno,
+                ["Horario"] = g.Key.Horario,
+                ["Funcao"] = g.Key.Funcao,
+            })
+            .ToList();
 
         // Also add ferias and ausencias
         var ferias = await _context.Ferias
@@ -421,7 +515,7 @@ public class RelatorioService : IRelatorioService
         {
             linhas.Add(new Dictionary<string, string>
             {
-                ["Data"] = $"{f.DataInicio:dd/MM/yyyy} a {f.DataFim:dd/MM/yyyy}",
+                ["Dias"] = $"{f.DataInicio:dd/MM/yyyy} a {f.DataFim:dd/MM/yyyy}",
                 ["Setor"] = "",
                 ["Turno"] = "FERIAS",
                 ["Horario"] = "",
@@ -436,7 +530,7 @@ public class RelatorioService : IRelatorioService
         {
             linhas.Add(new Dictionary<string, string>
             {
-                ["Data"] = $"{a.DataInicio:dd/MM/yyyy} a {a.DataFim:dd/MM/yyyy}",
+                ["Dias"] = $"{a.DataInicio:dd/MM/yyyy} a {a.DataFim:dd/MM/yyyy}",
                 ["Setor"] = "",
                 ["Turno"] = $"AUSENCIA ({a.Motivo})",
                 ["Horario"] = "",
@@ -446,7 +540,7 @@ public class RelatorioService : IRelatorioService
 
         return new RelatorioResult(
             $"Individual - {guardaNome} - {req.Mes:D2}/{req.Ano}",
-            new List<string> { "Data", "Setor", "Turno", "Horario", "Funcao" },
+            new List<string> { "Dias", "Setor", "Turno", "Horario", "Funcao" },
             linhas);
     }
 

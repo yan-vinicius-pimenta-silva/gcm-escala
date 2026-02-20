@@ -48,6 +48,19 @@ function isHorarioCompativelComRegime(horario: Horario, regime: RegimeTrabalho):
   return regime === RegimeTrabalho.Doze36 ? duracao >= 600 : duracao < 600;
 }
 
+// Horário noturno = atravessa a meia-noite (ex: 19:00-07:00)
+function isHorarioNoturno(horario: Horario): boolean {
+  return horario.fim < horario.inicio;
+}
+
+// Retorna true=noturno, false=diurno, null=indeterminado (não filtra)
+function tipoTurno(turno: Turno): boolean | null {
+  const nome = turno.nome.toLowerCase();
+  if (nome.includes('noturno')) return true;
+  if (nome.includes('diurno')) return false;
+  return null;
+}
+
 function getGuardaIdFromAlocState(alocState: AlocacaoState): number | null {
   if (alocState.guardaIds.length > 0) return alocState.guardaIds[0];
   if (alocState.motoristaId) return alocState.motoristaId;
@@ -92,8 +105,14 @@ export default function EscalaItemForm({ tipoSetor, ano, mes, quinzena, editingI
   const [turnoId, setTurnoId] = useState<number | ''>('');
   const [horarioId, setHorarioId] = useState<number | ''>('');
 
-  // Horários compatíveis com o regime selecionado (12x36 ↔ ≥10h; 8h ↔ <10h)
-  const compatibleHorarios = activeHorarios.filter((h: Horario) => isHorarioCompativelComRegime(h, regime));
+  // Horários compatíveis com o regime E com o tipo do turno (diurno/noturno)
+  const selectedTurno = activeTurnos.find((t: Turno) => t.id === turnoId) ?? null;
+  const turnoTipo = selectedTurno ? tipoTurno(selectedTurno) : null;
+  const compatibleHorarios = activeHorarios.filter((h: Horario) => {
+    if (!isHorarioCompativelComRegime(h, regime)) return false;
+    if (turnoTipo === null) return true; // turno sem classificação clara: mostra todos
+    return isHorarioNoturno(h) === turnoTipo;
+  });
   const [selectedDays, setSelectedDays] = useState<number[]>([]);
   const [observacao, setObservacao] = useState('');
   const [alocState, setAlocState] = useState<AlocacaoState>(emptyAlocacaoState);
@@ -202,6 +221,18 @@ export default function EscalaItemForm({ tipoSetor, ano, mes, quinzena, editingI
       setHorarioId('');
     }
   }, [regime]);
+
+  // Limpa horário selecionado se ele for incompatível com o novo turno (diurno/noturno)
+  useEffect(() => {
+    if (!horarioId || !turnoId) return;
+    const horario = activeHorarios.find((h: Horario) => h.id === horarioId);
+    const turno = activeTurnos.find((t: Turno) => t.id === turnoId);
+    if (!horario || !turno) return;
+    const tipo = tipoTurno(turno);
+    if (tipo !== null && isHorarioNoturno(horario) !== tipo) {
+      setHorarioId('');
+    }
+  }, [turnoId]);
 
   useEffect(() => {
     if (editingItem) {
